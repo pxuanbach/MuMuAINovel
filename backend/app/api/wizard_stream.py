@@ -16,7 +16,7 @@ from app.models.relationship import CharacterRelationship, Organization, Organiz
 from app.models.writing_style import WritingStyle
 from app.models.project_default_style import ProjectDefaultStyle
 from app.services.ai_service import AIService
-from app.services.json_helper import loads_json
+from app.services.json_helper import loads_json, stringify_field
 from app.services.prompt_service import prompt_service, PromptService
 from app.services.plot_expansion_service import PlotExpansionService
 from app.logger import get_logger, safe_preview
@@ -466,9 +466,9 @@ async def career_system_generator(
                                 category=career_info.get("category"),
                                 stages=stages_json,
                                 max_stage=career_info.get("max_stage", 10),
-                                requirements=career_info.get("requirements"),
-                                special_abilities=career_info.get("special_abilities"),
-                                worldview_rules=career_info.get("worldview_rules"),
+                                requirements=stringify_field(career_info.get("requirements")),
+                                special_abilities=stringify_field(career_info.get("special_abilities")),
+                                worldview_rules=stringify_field(career_info.get("worldview_rules")),
                                 attribute_bonuses=attribute_bonuses_json,
                                 source="ai"
                             )
@@ -496,9 +496,9 @@ async def career_system_generator(
                                 category=career_info.get("category"),
                                 stages=stages_json,
                                 max_stage=career_info.get("max_stage", 5),
-                                requirements=career_info.get("requirements"),
-                                special_abilities=career_info.get("special_abilities"),
-                                worldview_rules=career_info.get("worldview_rules"),
+                                requirements=stringify_field(career_info.get("requirements")),
+                                special_abilities=stringify_field(career_info.get("special_abilities")),
+                                worldview_rules=stringify_field(career_info.get("worldview_rules")),
                                 attribute_bonuses=attribute_bonuses_json,
                                 source="ai"
                             )

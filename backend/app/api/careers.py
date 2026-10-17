@@ -25,7 +25,7 @@ from app.schemas.career import (
     CareerStage
 )
 from app.services.ai_service import AIService
-from app.services.json_helper import loads_json
+from app.services.json_helper import loads_json, stringify_field
 from app.logger import get_logger, safe_preview
 from app.api.settings import get_user_ai_service
 from app.api.common import verify_project_access
@@ -380,9 +380,9 @@ async def generate_career_system(
                         category=career_info.get("category"),
                         stages=stages_json,
                         max_stage=career_info.get("max_stage", 10),
-                        requirements=career_info.get("requirements"),
-                        special_abilities=career_info.get("special_abilities"),
-                        worldview_rules=career_info.get("worldview_rules"),
+                        requirements=stringify_field(career_info.get("requirements")),
+                        special_abilities=stringify_field(career_info.get("special_abilities")),
+                        worldview_rules=stringify_field(career_info.get("worldview_rules")),
                         attribute_bonuses=attribute_bonuses_json,
                         source="ai"
                     )
@@ -412,9 +412,9 @@ async def generate_career_system(
                         category=career_info.get("category"),
                         stages=stages_json,
                         max_stage=career_info.get("max_stage", 5),
-                        requirements=career_info.get("requirements"),
-                        special_abilities=career_info.get("special_abilities"),
-                        worldview_rules=career_info.get("worldview_rules"),
+                        requirements=stringify_field(career_info.get("requirements")),
+                        special_abilities=stringify_field(career_info.get("special_abilities")),
+                        worldview_rules=stringify_field(career_info.get("worldview_rules")),
                         attribute_bonuses=attribute_bonuses_json,
                         source="ai"
                     )

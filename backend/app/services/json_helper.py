@@ -14,6 +14,21 @@ except ImportError:
 logger = get_logger(__name__)
 
 
+def stringify_field(value: Any) -> Any:
+    """把 AI 可能返回的列表/字典归一化为文本，供 Text 列存储。
+
+    模型偶尔会对本应是字符串的字段（如 special_abilities）返回 JSON 数组，
+    直接写入 Text 列会触发 sqlite3 的 "type 'list' is not supported"。
+    """
+    if value is None or isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple, set)):
+        return "、".join(str(item) for item in value if item is not None)
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
 # 中文引号/括号到ASCII的映射
 _QUOTE_MAP = {
     '\u201c': '"',  # " → "

@@ -44,6 +44,7 @@ from app.schemas.book_import import (
 )
 from app.services.ai_service import AIService, create_user_ai_service_with_mcp
 from app.services.prompt_service import PromptService
+from app.services.json_helper import stringify_field
 from app.services.txt_parser_service import txt_parser_service
 
 logger = get_logger(__name__)
@@ -1823,9 +1824,9 @@ class BookImportService:
                 category=item.get("category"),
                 stages=json.dumps(stages, ensure_ascii=False),
                 max_stage=max_stage,
-                requirements=item.get("requirements"),
-                special_abilities=item.get("special_abilities"),
-                worldview_rules=item.get("worldview_rules"),
+                requirements=stringify_field(item.get("requirements")),
+                special_abilities=stringify_field(item.get("special_abilities")),
+                worldview_rules=stringify_field(item.get("worldview_rules")),
                 attribute_bonuses=attr_bonuses_json,
                 source="ai",
             )

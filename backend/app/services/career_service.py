@@ -7,6 +7,7 @@ import json
 from app.models.project import Project
 from app.models.career import Career
 from app.services.ai_service import AIService
+from app.services.json_helper import stringify_field
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -143,9 +144,9 @@ class CareerService:
                     category=career_info.get("category"),
                     stages=stages_json,
                     max_stage=career_info.get("max_stage", 10),
-                    requirements=career_info.get("requirements"),
-                    special_abilities=career_info.get("special_abilities"),
-                    worldview_rules=career_info.get("worldview_rules"),
+                    requirements=stringify_field(career_info.get("requirements")),
+                    special_abilities=stringify_field(career_info.get("special_abilities")),
+                    worldview_rules=stringify_field(career_info.get("worldview_rules")),
                     attribute_bonuses=attribute_bonuses_json,
                     source="ai"
                 )
@@ -172,9 +173,9 @@ class CareerService:
                     category=career_info.get("category"),
                     stages=stages_json,
                     max_stage=career_info.get("max_stage", 5),
-                    requirements=career_info.get("requirements"),
-                    special_abilities=career_info.get("special_abilities"),
-                    worldview_rules=career_info.get("worldview_rules"),
+                    requirements=stringify_field(career_info.get("requirements")),
+                    special_abilities=stringify_field(career_info.get("special_abilities")),
+                    worldview_rules=stringify_field(career_info.get("worldview_rules")),
                     attribute_bonuses=attribute_bonuses_json,
                     source="ai"
                 )

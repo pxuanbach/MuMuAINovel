@@ -9,6 +9,8 @@ import {
   TrophyOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import dagre from 'dagre';
 import {
   ReactFlow,
@@ -102,27 +104,32 @@ const GROUP_SUB_CAREER_NODE_ID = '__career_group_sub__';
 
 type EdgeColorPreset = 'primary' | 'warning' | 'info' | 'textTertiary' | 'error' | 'success';
 
-const EDGE_CATEGORY_META: Record<string, { label: string; colorPreset: EdgeColorPreset; order: number }> = {
-  organization: { label: '组织成员', colorPreset: 'primary', order: 1 },
-  career_main: { label: '主职业关联', colorPreset: 'warning', order: 2 },
-  career_sub: { label: '副职业关联', colorPreset: 'info', order: 3 },
-  career_group: { label: '职业分类', colorPreset: 'textTertiary', order: 4 },
-  family: { label: '亲属关系', colorPreset: 'warning', order: 5 },
-  hostile: { label: '敌对关系', colorPreset: 'error', order: 6 },
-  professional: { label: '职业关系', colorPreset: 'info', order: 7 },
-  social: { label: '社交关系', colorPreset: 'success', order: 8 },
-  default: { label: '其他关系', colorPreset: 'textTertiary', order: 99 },
+const EDGE_CATEGORY_META: Record<string, { labelKey: string; colorPreset: EdgeColorPreset; order: number }> = {
+  organization: { labelKey: 'relationships.graph.edgeOrganization', colorPreset: 'primary', order: 1 },
+  career_main: { labelKey: 'relationships.graph.edgeCareerMain', colorPreset: 'warning', order: 2 },
+  career_sub: { labelKey: 'relationships.graph.edgeCareerSub', colorPreset: 'info', order: 3 },
+  career_group: { labelKey: 'relationships.graph.edgeCareerGroup', colorPreset: 'textTertiary', order: 4 },
+  family: { labelKey: 'relationships.graph.edgeFamily', colorPreset: 'warning', order: 5 },
+  hostile: { labelKey: 'relationships.graph.edgeHostile', colorPreset: 'error', order: 6 },
+  professional: { labelKey: 'relationships.graph.edgeProfessional', colorPreset: 'info', order: 7 },
+  social: { labelKey: 'relationships.graph.edgeSocial', colorPreset: 'success', order: 8 },
+  default: { labelKey: 'relationships.graph.edgeDefault', colorPreset: 'textTertiary', order: 99 },
 };
 
 const getEdgeCategory = (edge: Edge) =>
   typeof edge.data?.category === 'string' ? edge.data.category : 'default';
 
-const getEdgeCategoryMeta = (category: string) =>
-  EDGE_CATEGORY_META[category] || {
-    label: `${category}关系`,
+const getEdgeCategoryMeta = (t: TFunction, category: string) => {
+  const meta = EDGE_CATEGORY_META[category];
+  if (meta) {
+    return { label: t(meta.labelKey), colorPreset: meta.colorPreset, order: meta.order };
+  }
+  return {
+    label: t('relationships.graph.edgeFallback', { category }),
     colorPreset: 'textTertiary' as const,
     order: 999,
   };
+};
 
 const resolveEdgePresetColor = (
   colorPreset: EdgeColorPreset,
@@ -563,6 +570,7 @@ const InfoField = ({
 export default function RelationshipGraph() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = theme.useToken();
   const alphaColor = (color: string, alpha: number) =>
     `color-mix(in srgb, ${color} ${(alpha * 100).toFixed(0)}%, transparent)`;
@@ -599,7 +607,7 @@ export default function RelationshipGraph() {
 
     return Array.from(counter.entries())
       .map(([category, count]) => {
-        const meta = getEdgeCategoryMeta(category);
+        const meta = getEdgeCategoryMeta(t, category);
         return {
           category,
           count,
@@ -608,8 +616,8 @@ export default function RelationshipGraph() {
           order: meta.order,
         };
       })
-      .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label, 'zh-CN'));
-  }, [edges, token]);
+      .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+  }, [edges, token, t]);
 
   useEffect(() => {
     if (edgeCategoryOptions.length === 0) {
@@ -775,7 +783,7 @@ export default function RelationshipGraph() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
             <ApartmentOutlined style={{ fontSize: 24, color: token.colorSuccess, marginBottom: 4 }} />
             <div style={{ fontWeight: 600, fontSize: 14, color: token.colorText, maxWidth: '90%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</div>
-            <div style={{ fontSize: 11, color: token.colorTextSecondary, marginTop: 2 }}>{detail?.organization_type || '组织'}</div>
+            <div style={{ fontSize: 11, color: token.colorTextSecondary, marginTop: 2 }}>{detail?.organization_type || t('relationships.graph.organization')}</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
@@ -788,7 +796,7 @@ export default function RelationshipGraph() {
             )}
             <div style={{ fontWeight: 600, fontSize: 13, color: token.colorText, maxWidth: '90%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</div>
             <div style={{ fontSize: 11, color: baseColor, marginTop: 2, transform: 'scale(0.9)' }}>
-              {node.role_type === 'protagonist' ? '主角' : node.role_type === 'antagonist' ? '反派' : '配角'}
+              {node.role_type === 'protagonist' ? t('relationships.graph.roleProtagonist') : node.role_type === 'antagonist' ? t('relationships.graph.roleAntagonist') : t('relationships.graph.roleSupporting')}
             </div>
           </div>
         );
@@ -813,7 +821,7 @@ export default function RelationshipGraph() {
         data: {
           label: (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ fontSize: 11, color: token.colorWarning, marginBottom: 2 }}>主职业</div>
+              <div style={{ fontSize: 11, color: token.colorWarning, marginBottom: 2 }}>{t('relationships.graph.mainCareer')}</div>
               <div style={{ fontWeight: 600, fontSize: 13, color: token.colorText }}>{career.name}</div>
             </div>
           ),
@@ -829,7 +837,7 @@ export default function RelationshipGraph() {
         data: {
           label: (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ fontSize: 11, color: token.colorInfo, marginBottom: 2 }}>副职业</div>
+              <div style={{ fontSize: 11, color: token.colorInfo, marginBottom: 2 }}>{t('relationships.graph.subCareer')}</div>
               <div style={{ fontWeight: 600, fontSize: 13, color: token.colorText }}>{career.name}</div>
             </div>
           ),
@@ -845,7 +853,7 @@ export default function RelationshipGraph() {
           type: 'default',
           position: { x: 0, y: 0 },
           data: {
-            label: '主职业分组',
+            label: t('relationships.graph.mainCareerGroup'),
             type: 'career_group',
           },
           style: getCareerGroupStyle('main'),
@@ -857,7 +865,7 @@ export default function RelationshipGraph() {
           type: 'default',
           position: { x: 0, y: 0 },
           data: {
-            label: '副职业分组',
+            label: t('relationships.graph.subCareerGroup'),
             type: 'career_group',
           },
           style: getCareerGroupStyle('sub'),
@@ -977,7 +985,7 @@ export default function RelationshipGraph() {
       setEdges([...orgMemberEdges, ...careerGroupEdges, ...careerToCharacterEdges, ...memberRelationEdges]);
       setGraphData(data);
     } catch (error) {
-      message.error('加载关系图谱失败');
+      message.error(t('relationships.graph.loadGraphFailed'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -1029,7 +1037,7 @@ export default function RelationshipGraph() {
       const res = await axios.get(`/api/characters/${nodeId}`);
       setNodeDetail(res.data as CharacterDetail);
     } catch (error) {
-      message.error('加载详情失败');
+      message.error(t('relationships.graph.loadDetailFailed'));
       console.error(error);
     } finally {
       setDetailLoading(false);
@@ -1082,40 +1090,40 @@ export default function RelationshipGraph() {
         }}
       >
         <Text strong style={{ fontSize: 14, color: token.colorText }}>
-          职业体系
+          {t('relationships.graph.careerSystem')}
         </Text>
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {nodeDetail.main_career_id ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Tag color="gold" style={{ margin: 0, borderRadius: 12, padding: '0 10px', fontWeight: 500 }}>主职业</Tag>
+              <Tag color="gold" style={{ margin: 0, borderRadius: 12, padding: '0 10px', fontWeight: 500 }}>{t('relationships.graph.mainCareer')}</Tag>
               <span style={{ fontSize: 14, color: token.colorText }}>
                 {careerNameMap[nodeDetail.main_career_id]?.name || nodeDetail.main_career_id}
-                {nodeDetail.main_career_stage ? <span style={{ color: token.colorTextTertiary, marginLeft: 4 }}>第{nodeDetail.main_career_stage}阶</span> : ''}
+                {nodeDetail.main_career_stage ? <span style={{ color: token.colorTextTertiary, marginLeft: 4 }}>{t('relationships.graph.mainCareerStage', { stage: nodeDetail.main_career_stage })}</span> : ''}
               </span>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Tag style={{ margin: 0, borderRadius: 12, padding: '0 10px' }}>主职业</Tag>
-              <span style={{ fontSize: 14, color: token.colorTextTertiary }}>未设置</span>
+              <Tag style={{ margin: 0, borderRadius: 12, padding: '0 10px' }}>{t('relationships.graph.mainCareer')}</Tag>
+              <span style={{ fontSize: 14, color: token.colorTextTertiary }}>{t('relationships.graph.notSet')}</span>
             </div>
           )}
 
           {subCareerData.length > 0 ? (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-               <Tag color="cyan" style={{ margin: 0, borderRadius: 12, padding: '0 10px', fontWeight: 500 }}>副职业</Tag>
+               <Tag color="cyan" style={{ margin: 0, borderRadius: 12, padding: '0 10px', fontWeight: 500 }}>{t('relationships.graph.subCareer')}</Tag>
                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
                 {subCareerData.map((sub, index) => (
                   <span key={`${sub.career_id}-${index}`} style={{ fontSize: 14, color: token.colorText, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, borderRadius: token.borderRadiusSM, padding: '0 6px' }}>
                     {careerNameMap[sub.career_id]?.name || sub.career_id}
-                    {sub.stage ? <span style={{ color: token.colorTextTertiary, marginLeft: 4 }}>阶{sub.stage}</span> : ''}
+                    {sub.stage ? <span style={{ color: token.colorTextTertiary, marginLeft: 4 }}>{t('relationships.graph.subCareerStage', { stage: sub.stage })}</span> : ''}
                   </span>
                 ))}
                </div>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Tag style={{ margin: 0, borderRadius: 12, padding: '0 10px' }}>副职业</Tag>
-              <span style={{ fontSize: 14, color: token.colorTextTertiary }}>未设置</span>
+              <Tag style={{ margin: 0, borderRadius: 12, padding: '0 10px' }}>{t('relationships.graph.subCareer')}</Tag>
+              <span style={{ fontSize: 14, color: token.colorTextTertiary }}>{t('relationships.graph.notSet')}</span>
             </div>
           )}
         </div>
@@ -1156,11 +1164,11 @@ export default function RelationshipGraph() {
         title={
           <Space>
             <Button type="text" icon={<ArrowLeftOutlined />} onClick={goBack}>
-              返回
+              {t('relationships.graph.back')}
             </Button>
-            <span>关系图谱</span>
+            <span>{t('relationships.graph.title')}</span>
             <Tag color="processing" style={{ marginInlineStart: 4 }}>
-              {graphData?.nodes?.length || 0} 节点 / {graphData?.links?.length || 0} 关系
+              {t('relationships.graph.nodeEdgeCount', { nodes: graphData?.nodes?.length || 0, edges: graphData?.links?.length || 0 })}
             </Tag>
           </Space>
         }
@@ -1170,19 +1178,19 @@ export default function RelationshipGraph() {
               {/* 节点图例 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorInfo, fontWeight: 'bold' }}>●</span>
-                <span>角色（圆形）</span>
+                <span>{t('relationships.graph.legendCharacter')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorSuccess, fontWeight: 'bold' }}>■</span>
-                <span>组织（方形）</span>
+                <span>{t('relationships.graph.legendOrganization')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorWarning, fontWeight: 'bold' }}>▭</span>
-                <span>主职业</span>
+                <span>{t('relationships.graph.mainCareer')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorInfo, fontWeight: 'bold' }}>▭</span>
-                <span>副职业</span>
+                <span>{t('relationships.graph.subCareer')}</span>
               </div>
 
               <span style={{ color: token.colorBorder }}>|</span>
@@ -1190,22 +1198,22 @@ export default function RelationshipGraph() {
               {/* 连线图例 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorPrimary, fontWeight: 'bold' }}>- -</span>
-                <span>组织成员</span>
+                <span>{t('relationships.graph.edgeOrganization')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorWarning, fontWeight: 'bold' }}>—</span>
-                <span>主职业关联</span>
+                <span>{t('relationships.graph.edgeCareerMain')}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ color: token.colorInfo, fontWeight: 'bold' }}>- -</span>
-                <span>副职业关联</span>
+                <span>{t('relationships.graph.edgeCareerSub')}</span>
               </div>
             </div>
 
             {edgeCategoryOptions.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  连线显示：
+                  {t('relationships.graph.edgeDisplay')}
                 </Text>
                 {edgeCategoryOptions.map((option) => {
                   const isVisible = edgeVisibilityMap[option.category] !== false;
@@ -1344,7 +1352,7 @@ export default function RelationshipGraph() {
             title={
               <Space>
                 {nodeDetail.is_organization ? <ApartmentOutlined /> : <UserOutlined />}
-                <span>{nodeDetail.is_organization ? '组织详情' : '角色详情'}</span>
+                <span>{nodeDetail.is_organization ? t('relationships.graph.organizationDetail') : t('relationships.graph.characterDetail')}</span>
               </Space>
             }
             extra={
@@ -1433,14 +1441,14 @@ export default function RelationshipGraph() {
                       style={{ borderRadius: 12, padding: '0 10px', fontWeight: 500 }}
                     >
                       {nodeDetail.role_type === 'protagonist'
-                        ? '主角'
+                        ? t('relationships.graph.roleProtagonist')
                         : nodeDetail.role_type === 'antagonist'
-                          ? '反派'
-                          : '配角'}
+                          ? t('relationships.graph.roleAntagonist')
+                          : t('relationships.graph.roleSupporting')}
                     </Tag>
                   )}
                   {nodeDetail.gender && !nodeDetail.is_organization && <Tag style={{ borderRadius: 12, padding: '0 10px' }}>{nodeDetail.gender}</Tag>}
-                  {nodeDetail.age && !nodeDetail.is_organization && <Tag style={{ borderRadius: 12, padding: '0 10px' }}>{nodeDetail.age}岁</Tag>}
+                  {nodeDetail.age && !nodeDetail.is_organization && <Tag style={{ borderRadius: 12, padding: '0 10px' }}>{t('relationships.graph.ageValue', { age: nodeDetail.age })}</Tag>}
                 </Space>
               </div>
 
@@ -1448,9 +1456,9 @@ export default function RelationshipGraph() {
                 {!nodeDetail.is_organization ? (
                   <>
                     {renderCareerTags()}
-                    <InfoField label="外貌特征" value={nodeDetail.appearance} rows={2} />
-                    <InfoField label="性格特点" value={nodeDetail.personality} rows={3} />
-                    <InfoField label="背景故事" value={nodeDetail.background} rows={4} />
+                    <InfoField label={t('relationships.graph.appearance')} value={nodeDetail.appearance} rows={2} />
+                    <InfoField label={t('relationships.graph.personality')} value={nodeDetail.personality} rows={3} />
+                    <InfoField label={t('relationships.graph.background')} value={nodeDetail.background} rows={4} />
 
                     {traitList.length > 0 && (
                       <div
@@ -1464,7 +1472,7 @@ export default function RelationshipGraph() {
                         }}
                       >
                         <Text strong style={{ fontSize: 14, color: token.colorText }}>
-                          特征标签
+                          {t('relationships.graph.traits')}
                         </Text>
                         <Space size={[6, 8]} wrap style={{ marginTop: 10 }}>
                           {traitList.slice(0, 12).map((trait, index) => (
@@ -1478,10 +1486,10 @@ export default function RelationshipGraph() {
                   </>
                 ) : (
                   <>
-                    <InfoField label="组织类型" value={nodeDetail.organization_type} rows={2} />
-                    <InfoField label="组织目的" value={nodeDetail.organization_purpose} rows={3} />
-                    <InfoField label="所在地" value={nodeDetail.location} rows={2} />
-                    <InfoField label="组织格言" value={nodeDetail.motto} rows={2} />
+                    <InfoField label={t('relationships.graph.organizationType')} value={nodeDetail.organization_type} rows={2} />
+                    <InfoField label={t('relationships.graph.organizationPurpose')} value={nodeDetail.organization_purpose} rows={3} />
+                    <InfoField label={t('relationships.graph.location')} value={nodeDetail.location} rows={2} />
+                    <InfoField label={t('relationships.graph.motto')} value={nodeDetail.motto} rows={2} />
 
                     {nodeDetail.power_level !== undefined && nodeDetail.power_level !== null && (
                       <div
@@ -1495,7 +1503,7 @@ export default function RelationshipGraph() {
                         }}
                       >
                         <Text strong style={{ fontSize: 14, color: token.colorText }}>
-                          势力等级
+                          {t('relationships.graph.powerLevel')}
                         </Text>
                         <div style={{ ...clampTextStyle(1), fontSize: 18, color: token.colorWarning, fontWeight: 'bold' }}>
                           {nodeDetail.power_level}<span style={{ fontSize: 14, color: token.colorTextTertiary, fontWeight: 'normal' }}>/100</span>
@@ -1515,7 +1523,7 @@ export default function RelationshipGraph() {
                         }}
                       >
                         <Text strong style={{ fontSize: 14, color: token.colorText }}>
-                          组织成员
+                          {t('relationships.graph.orgMembers')}
                         </Text>
                         <Space size={[6, 8]} wrap style={{ marginTop: 10 }}>
                           {orgMembers.slice(0, 16).map((member, index) => (
@@ -1548,9 +1556,9 @@ export default function RelationshipGraph() {
             <Space align="start">
               <TrophyOutlined style={{ color: token.colorWarning, marginTop: 4 }} />
               <div>
-                <Text strong>职业节点</Text>
+                <Text strong>{t('relationships.graph.careerNode')}</Text>
                 <p style={{ ...clampTextStyle(2), marginTop: 2 }}>
-                  职业节点用于展示主/副职业分组及其与角色的关联关系，不显示角色详情卡。
+                  {t('relationships.graph.careerNodeHint')}
                 </p>
               </div>
             </Space>

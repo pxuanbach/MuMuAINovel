@@ -3,6 +3,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
@@ -57,6 +58,7 @@ const isSafeImageUrl = (url?: string | null) => {
 
 export default function MarkdownRenderer({ content, compact = false }: MarkdownRendererProps) {
   const { token } = theme.useToken();
+  const { t } = useTranslation();
   const markdown = (content || '').trim();
 
   const components: Components = {
@@ -85,7 +87,7 @@ export default function MarkdownRenderer({ content, compact = false }: MarkdownR
         <img
           {...props}
           src={safeSrc}
-          alt={alt || '公告图片'}
+          alt={alt || t('markdown.announcementImageAlt')}
           loading="lazy"
         />
       );
@@ -294,7 +296,7 @@ export default function MarkdownRenderer({ content, compact = false }: MarkdownR
           {markdown}
         </ReactMarkdown>
       ) : (
-        <Text type="secondary">暂无内容</Text>
+        <Text type="secondary">{t('markdown.noContent')}</Text>
       )}
     </div>
   );

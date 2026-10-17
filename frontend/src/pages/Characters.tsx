@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Modal, Form, Input, Select, message, Row, Col, Empty, Tabs, Divider, Typography, Space, InputNumber, Checkbox, theme } from 'antd';
 import { ThunderboltOutlined, UserOutlined, TeamOutlined, PlusOutlined, ExportOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useStore } from '../store';
@@ -94,6 +95,7 @@ interface CharacterUpdateData {
 }
 
 export default function Characters() {
+  const { t } = useTranslation();
   const { token } = theme.useToken();
   const { currentProject, characters } = useStore();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -146,9 +148,9 @@ export default function Characters() {
   const handleDeleteCharacter = async (id: string) => {
     try {
       await deleteCharacter(id);
-      message.success('删除成功');
+      message.success(t('characters.deleteSuccess'));
     } catch {
-      message.error('删除失败');
+      message.error(t('characters.deleteFailed'));
     }
   };
 
@@ -156,7 +158,7 @@ export default function Characters() {
     try {
       setIsGenerating(true);
       setProgress(0);
-      setProgressMessage('准备生成角色...');
+      setProgressMessage(t('characters.preparingCharacter'));
 
       const client = new SSEPostClient(
         '/api/characters/generate-stream',
@@ -175,21 +177,21 @@ export default function Characters() {
             console.log('角色生成完成:', data);
           },
           onError: (error) => {
-            message.error(`生成失败: ${error}`);
+            message.error(t('characters.generateFailed', { error }));
           },
           onComplete: () => {
             setProgress(100);
-            setProgressMessage('生成完成！');
+            setProgressMessage(t('characters.generateComplete'));
           }
         }
       );
 
       await client.connect();
-      message.success('AI生成角色成功');
+      message.success(t('characters.generateCharacterSuccess'));
       Modal.destroyAll();
       await refreshCharacters();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'AI生成失败';
+      const errorMessage = error instanceof Error ? error.message : t('characters.generateFailedShort');
       message.error(errorMessage);
     } finally {
       setTimeout(() => {
@@ -209,7 +211,7 @@ export default function Characters() {
     try {
       setIsGenerating(true);
       setProgress(0);
-      setProgressMessage('准备生成组织...');
+      setProgressMessage(t('characters.preparingOrganization'));
 
       const client = new SSEPostClient(
         '/api/organizations/generate-stream',
@@ -229,21 +231,21 @@ export default function Characters() {
             console.log('组织生成完成:', data);
           },
           onError: (error) => {
-            message.error(`生成失败: ${error}`);
+            message.error(t('characters.generateFailed', { error }));
           },
           onComplete: () => {
             setProgress(100);
-            setProgressMessage('生成完成！');
+            setProgressMessage(t('characters.generateComplete'));
           }
         }
       );
 
       await client.connect();
-      message.success('AI生成组织成功');
+      message.success(t('characters.generateOrganizationSuccess'));
       Modal.destroyAll();
       await refreshCharacters();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'AI生成失败';
+      const errorMessage = error instanceof Error ? error.message : t('characters.generateFailedShort');
       message.error(errorMessage);
     } finally {
       setTimeout(() => {
@@ -294,12 +296,14 @@ export default function Characters() {
       }
 
       await characterApi.createCharacter(createData);
-      message.success(`${createType === 'character' ? '角色' : '组织'}创建成功`);
+      message.success(t('characters.createSuccess', {
+        type: createType === 'character' ? t('characters.characterLabel') : t('characters.organizationLabel')
+      }));
       setIsCreateModalOpen(false);
       createForm.resetFields();
       await refreshCharacters();
     } catch {
-      message.error('创建失败');
+      message.error(t('characters.createFailed'));
     }
   };
 
@@ -335,14 +339,14 @@ export default function Characters() {
       }
 
       await characterApi.updateCharacter(editingCharacter.id, updateData);
-      message.success('更新成功');
+      message.success(t('characters.updateSuccess'));
       setIsEditModalOpen(false);
       editForm.resetFields();
       setEditingCharacter(null);
       await refreshCharacters();
     } catch (error) {
       console.error('更新失败:', error);
-      message.error('更新失败');
+      message.error(t('characters.updateFailed'));
     }
   };
 
@@ -353,16 +357,16 @@ export default function Characters() {
   // 导出选中的角色/组织
   const handleExportSelected = async () => {
     if (selectedCharacters.length === 0) {
-      message.warning('请至少选择一个角色或组织');
+      message.warning(t('characters.selectAtLeastOne'));
       return;
     }
 
     try {
       await characterApi.exportCharacters(selectedCharacters);
-      message.success(`成功导出 ${selectedCharacters.length} 个角色/组织`);
+      message.success(t('characters.exportSelectedSuccess', { num: selectedCharacters.length }));
       setSelectedCharacters([]);
     } catch (error) {
-      message.error('导出失败');
+      message.error(t('characters.exportFailed'));
       console.error('导出错误:', error);
     }
   };
@@ -371,9 +375,9 @@ export default function Characters() {
   const handleExportSingle = async (characterId: string) => {
     try {
       await characterApi.exportCharacters([characterId]);
-      message.success('导出成功');
+      message.success(t('characters.exportSuccess'));
     } catch (error) {
-      message.error('导出失败');
+      message.error(t('characters.exportFailed'));
       console.error('导出错误:', error);
     }
   };
@@ -386,7 +390,7 @@ export default function Characters() {
       
       if (!validation.valid) {
         modal.error({
-          title: '文件验证失败',
+          title: t('characters.fileValidationFailed'),
           centered: true,
           content: (
             <div>
@@ -401,22 +405,22 @@ export default function Characters() {
 
       // 显示预览对话框
       modal.confirm({
-        title: '导入预览',
+        title: t('characters.importPreview'),
         width: 500,
         centered: true,
         content: (
           <div>
-            <p><strong>文件版本:</strong> {validation.version}</p>
+            <p><strong>{t('characters.fileVersion')}</strong> {validation.version}</p>
             <Divider style={{ margin: '12px 0' }} />
-            <p><strong>将要导入:</strong></p>
+            <p><strong>{t('characters.toBeImported')}</strong></p>
             <ul style={{ marginLeft: 20 }}>
-              <li>角色: {validation.statistics.characters} 个</li>
-              <li>组织: {validation.statistics.organizations} 个</li>
+              <li>{t('characters.charactersCount', { num: validation.statistics.characters })}</li>
+              <li>{t('characters.organizationsCount', { num: validation.statistics.organizations })}</li>
             </ul>
             {validation.warnings.length > 0 && (
               <>
                 <Divider style={{ margin: '12px 0' }} />
-                <p style={{ color: token.colorWarning }}><strong>⚠️ 警告:</strong></p>
+                <p style={{ color: token.colorWarning }}><strong>{t('characters.warningLabel')}</strong></p>
                 <ul style={{ marginLeft: 20 }}>
                   {validation.warnings.map((warning, index) => (
                     <li key={index} style={{ color: token.colorWarning }}>{warning}</li>
@@ -426,8 +430,8 @@ export default function Characters() {
             )}
           </div>
         ),
-        okText: '确认导入',
-        cancelText: '取消',
+        okText: t('characters.confirmImport'),
+        cancelText: t('characters.cancel'),
         onOk: async () => {
           try {
             const result = await characterApi.importCharacters(currentProject.id, file);
@@ -435,15 +439,15 @@ export default function Characters() {
             if (result.success) {
               // 显示导入结果
               modal.success({
-                title: '导入完成',
+                title: t('characters.importComplete'),
                 width: 600,
                 centered: true,
                 content: (
                   <div>
-                    <p><strong>✅ 成功导入: {result.statistics.imported} 个</strong></p>
+                    <p><strong>{t('characters.importSuccessCount', { num: result.statistics.imported })}</strong></p>
                     {result.details.imported_characters.length > 0 && (
                       <>
-                        <p style={{ marginTop: 12, marginBottom: 4 }}>角色:</p>
+                        <p style={{ marginTop: 12, marginBottom: 4 }}>{t('characters.charactersListLabel')}</p>
                         <ul style={{ marginLeft: 20 }}>
                           {result.details.imported_characters.map((name, index) => (
                             <li key={index}>{name}</li>
@@ -453,7 +457,7 @@ export default function Characters() {
                     )}
                     {result.details.imported_organizations.length > 0 && (
                       <>
-                        <p style={{ marginTop: 12, marginBottom: 4 }}>组织:</p>
+                        <p style={{ marginTop: 12, marginBottom: 4 }}>{t('characters.organizationsListLabel')}</p>
                         <ul style={{ marginLeft: 20 }}>
                           {result.details.imported_organizations.map((name, index) => (
                             <li key={index}>{name}</li>
@@ -464,7 +468,7 @@ export default function Characters() {
                     {result.statistics.skipped > 0 && (
                       <>
                         <Divider style={{ margin: '12px 0' }} />
-                        <p style={{ color: token.colorWarning }}>⚠️ 跳过: {result.statistics.skipped} 个</p>
+                        <p style={{ color: token.colorWarning }}>{t('characters.skippedCount', { num: result.statistics.skipped })}</p>
                         <ul style={{ marginLeft: 20 }}>
                           {result.details.skipped.map((name, index) => (
                             <li key={index} style={{ color: token.colorWarning }}>{name}</li>
@@ -475,7 +479,7 @@ export default function Characters() {
                     {result.warnings.length > 0 && (
                       <>
                         <Divider style={{ margin: '12px 0' }} />
-                        <p style={{ color: token.colorWarning }}>⚠️ 警告:</p>
+                        <p style={{ color: token.colorWarning }}>{t('characters.warningLabel')}</p>
                         <ul style={{ marginLeft: 20 }}>
                           {result.warnings.map((warning, index) => (
                             <li key={index} style={{ color: token.colorWarning }}>{warning}</li>
@@ -486,7 +490,7 @@ export default function Characters() {
                     {result.details.errors.length > 0 && (
                       <>
                         <Divider style={{ margin: '12px 0' }} />
-                        <p style={{ color: token.colorError }}>❌ 失败: {result.statistics.errors} 个</p>
+                        <p style={{ color: token.colorError }}>{t('characters.failedCount', { num: result.statistics.errors })}</p>
                         <ul style={{ marginLeft: 20 }}>
                           {result.details.errors.map((error, index) => (
                             <li key={index} style={{ color: token.colorError }}>{error}</li>
@@ -502,18 +506,18 @@ export default function Characters() {
               await refreshCharacters();
               setIsImportModalOpen(false);
             } else {
-              message.error(result.message || '导入失败');
+              message.error(result.message || t('characters.importFailed'));
             }
           } catch (error: unknown) {
             const apiError = error as ApiError;
-            message.error(apiError.response?.data?.detail || '导入失败');
+            message.error(apiError.response?.data?.detail || t('characters.importFailed'));
             console.error('导入错误:', error);
           }
         },
       });
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.detail || '文件验证失败');
+      message.error(apiError.response?.data?.detail || t('characters.fileValidationFailed'));
       console.error('验证错误:', error);
     }
   };
@@ -536,35 +540,35 @@ export default function Characters() {
 
   const showGenerateModal = () => {
     modal.confirm({
-      title: 'AI生成角色',
+      title: t('characters.aiGenerateCharacter'),
       width: 600,
       centered: true,
       content: (
         <Form form={generateForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
-            label="角色名称"
+            label={t('characters.characterName')}
             name="name"
           >
-            <Input placeholder="如：张三、李四（可选，AI会自动生成）" />
+            <Input placeholder={t('characters.characterNamePlaceholder')} />
           </Form.Item>
           <Form.Item
-            label="角色定位"
+            label={t('characters.roleType')}
             name="role_type"
-            rules={[{ required: true, message: '请选择角色定位' }]}
+            rules={[{ required: true, message: t('characters.roleTypeRequired') }]}
           >
-            <Select placeholder="选择角色定位">
-              <Select.Option value="protagonist">主角</Select.Option>
-              <Select.Option value="supporting">配角</Select.Option>
-              <Select.Option value="antagonist">反派</Select.Option>
+            <Select placeholder={t('characters.selectRoleType')}>
+              <Select.Option value="protagonist">{t('characters.roleProtagonist')}</Select.Option>
+              <Select.Option value="supporting">{t('characters.roleSupporting')}</Select.Option>
+              <Select.Option value="antagonist">{t('characters.roleAntagonist')}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label="背景设定" name="background">
-            <TextArea rows={3} placeholder="简要描述角色背景和故事环境..." />
+          <Form.Item label={t('characters.backgroundSetting')} name="background">
+            <TextArea rows={3} placeholder={t('characters.backgroundSettingCharacterPlaceholder')} />
           </Form.Item>
         </Form>
       ),
-      okText: '生成',
-      cancelText: '取消',
+      okText: t('characters.generate'),
+      cancelText: t('characters.cancel'),
       onOk: async () => {
         const values = await generateForm.validateFields();
         await handleGenerate(values);
@@ -574,33 +578,33 @@ export default function Characters() {
 
   const showGenerateOrgModal = () => {
     modal.confirm({
-      title: 'AI生成组织',
+      title: t('characters.aiGenerateOrganization'),
       width: 600,
       centered: true,
       content: (
         <Form form={generateOrgForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
-            label="组织名称"
+            label={t('characters.organizationName')}
             name="name"
           >
-            <Input placeholder="如：天剑门、黑龙会（可选，AI会自动生成）" />
+            <Input placeholder={t('characters.organizationNamePlaceholder')} />
           </Form.Item>
           <Form.Item
-            label="组织类型"
+            label={t('characters.organizationType')}
             name="organization_type"
           >
-            <Input placeholder="如：门派、帮派、公司、学院（可选，AI会根据世界观生成）" />
+            <Input placeholder={t('characters.organizationTypePlaceholderAi')} />
           </Form.Item>
-          <Form.Item label="背景设定" name="background">
-            <TextArea rows={3} placeholder="简要描述组织的背景和环境..." />
+          <Form.Item label={t('characters.backgroundSetting')} name="background">
+            <TextArea rows={3} placeholder={t('characters.backgroundSettingOrgPlaceholder')} />
           </Form.Item>
-          <Form.Item label="其他要求" name="requirements">
-            <TextArea rows={2} placeholder="其他特殊要求..." />
+          <Form.Item label={t('characters.otherRequirements')} name="requirements">
+            <TextArea rows={2} placeholder={t('characters.otherRequirementsPlaceholder')} />
           </Form.Item>
         </Form>
       ),
-      okText: '生成',
-      cancelText: '取消',
+      okText: t('characters.generate'),
+      cancelText: t('characters.cancel'),
       onOk: async () => {
         const values = await generateOrgForm.validateFields();
         await handleGenerateOrganization(values);
@@ -640,7 +644,7 @@ export default function Characters() {
       }}>
         <h2 style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
           <TeamOutlined style={{ marginRight: 8 }} />
-          角色与组织管理
+          {t('characters.pageTitle')}
         </h2>
         <Space wrap>
           <Button
@@ -652,7 +656,7 @@ export default function Characters() {
             }}
             size={isMobile ? 'small' : 'middle'}
           >
-            创建角色
+            {t('characters.createCharacter')}
           </Button>
           <Button
             type="primary"
@@ -663,7 +667,7 @@ export default function Characters() {
             }}
             size={isMobile ? 'small' : 'middle'}
           >
-            创建组织
+            {t('characters.createOrganization')}
           </Button>
           <Button
             type="dashed"
@@ -672,7 +676,7 @@ export default function Characters() {
             loading={isGenerating}
             size={isMobile ? 'small' : 'middle'}
           >
-            AI生成角色
+            {t('characters.aiGenerateCharacter')}
           </Button>
           <Button
             type="dashed"
@@ -681,14 +685,14 @@ export default function Characters() {
             loading={isGenerating}
             size={isMobile ? 'small' : 'middle'}
           >
-            AI生成组织
+            {t('characters.aiGenerateOrganization')}
           </Button>
           <Button
             icon={<ImportOutlined />}
             onClick={() => setIsImportModalOpen(true)}
             size={isMobile ? 'small' : 'middle'}
           >
-            导入
+            {t('characters.import')}
           </Button>
           {selectedCharacters.length > 0 && (
             <Button
@@ -696,7 +700,7 @@ export default function Characters() {
               onClick={handleExportSelected}
               size={isMobile ? 'small' : 'middle'}
             >
-              批量导出 ({selectedCharacters.length})
+              {t('characters.batchExport', { num: selectedCharacters.length })}
             </Button>
           )}
         </Space>
@@ -717,13 +721,13 @@ export default function Characters() {
             items={[
               {
                 key: 'all',
-                label: `全部 (${characters.length})`,
+                label: t('characters.tabAll', { num: characters.length }),
               },
               {
                 key: 'character',
                 label: (
                   <span>
-                    <UserOutlined /> 角色 ({characterList.length})
+                    <UserOutlined /> {t('characters.tabCharacters', { num: characterList.length })}
                   </span>
                 ),
               },
@@ -731,7 +735,7 @@ export default function Characters() {
                 key: 'organization',
                 label: (
                   <span>
-                    <TeamOutlined /> 组织 ({organizationList.length})
+                    <TeamOutlined /> {t('characters.tabOrganizations', { num: organizationList.length })}
                   </span>
                 ),
               },
@@ -758,7 +762,7 @@ export default function Characters() {
               indeterminate={selectedCharacters.length > 0 && selectedCharacters.length < displayList.length}
               onChange={toggleSelectAll}
             >
-              {selectedCharacters.length > 0 ? `已选 ${selectedCharacters.length} 个` : '全选'}
+              {selectedCharacters.length > 0 ? t('characters.selectedCount', { num: selectedCharacters.length }) : t('characters.selectAll')}
             </Checkbox>
             {selectedCharacters.length > 0 && (
               <Button
@@ -766,7 +770,7 @@ export default function Characters() {
                 size="small"
                 onClick={() => setSelectedCharacters([])}
               >
-                取消选择
+                {t('characters.clearSelection')}
               </Button>
             )}
           </Space>
@@ -775,7 +779,7 @@ export default function Characters() {
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {characters.length === 0 ? (
-          <Empty description="还没有角色或组织，开始创建吧！" />
+          <Empty description={t('characters.emptyNoCharacters')} />
         ) : (
           <>
             <Row gutter={isMobile ? [8, 8] : charactersPageGridConfig.gutter}>
@@ -787,7 +791,7 @@ export default function Characters() {
                         <Divider orientation="left">
                           <Title level={5} style={{ margin: 0 }}>
                             <UserOutlined style={{ marginRight: 8 }} />
-                            角色 ({characterList.length})
+                            {t('characters.tabCharacters', { num: characterList.length })}
                           </Title>
                         </Divider>
                       </Col>
@@ -825,7 +829,7 @@ export default function Characters() {
                         <Divider orientation="left">
                           <Title level={5} style={{ margin: 0 }}>
                             <TeamOutlined style={{ marginRight: 8 }} />
-                            组织 ({organizationList.length})
+                            {t('characters.tabOrganizations', { num: organizationList.length })}
                           </Title>
                         </Divider>
                       </Col>
@@ -916,10 +920,10 @@ export default function Characters() {
               <Empty
                 description={
                   activeTab === 'character'
-                    ? '暂无角色'
+                    ? t('characters.noCharacters')
                     : activeTab === 'organization'
-                      ? '暂无组织'
-                      : '暂无数据'
+                      ? t('characters.noOrganizations')
+                      : t('characters.noData')
                 }
               />
             )}
@@ -928,7 +932,7 @@ export default function Characters() {
       </div>
 
       <Modal
-        title={editingCharacter?.is_organization ? '编辑组织' : '编辑角色'}
+        title={editingCharacter?.is_organization ? t('characters.editOrganization') : t('characters.editCharacter')}
         open={isEditModalOpen}
         onCancel={() => {
           setIsEditModalOpen(false);
@@ -942,10 +946,10 @@ export default function Characters() {
               editForm.resetFields();
               setEditingCharacter(null);
             }}>
-              取消
+              {t('characters.cancel')}
             </Button>
             <Button type="primary" onClick={() => editForm.submit()}>
-              保存
+              {t('characters.save')}
             </Button>
           </Space>
         }
@@ -967,34 +971,34 @@ export default function Characters() {
               <Row gutter={12}>
                 <Col span={8}>
                   <Form.Item
-                    label="角色名称"
+                    label={t('characters.characterName')}
                     name="name"
-                    rules={[{ required: true, message: '请输入角色名称' }]}
+                    rules={[{ required: true, message: t('characters.characterNameRequired') }]}
                     style={{ marginBottom: 12 }}
                   >
-                    <Input placeholder="角色名称" />
+                    <Input placeholder={t('characters.characterName')} />
                   </Form.Item>
                 </Col>
                 <Col span={6}>
-                  <Form.Item label="角色定位" name="role_type" style={{ marginBottom: 12 }}>
+                  <Form.Item label={t('characters.roleType')} name="role_type" style={{ marginBottom: 12 }}>
                     <Select>
-                      <Select.Option value="protagonist">主角</Select.Option>
-                      <Select.Option value="supporting">配角</Select.Option>
-                      <Select.Option value="antagonist">反派</Select.Option>
+                      <Select.Option value="protagonist">{t('characters.roleProtagonist')}</Select.Option>
+                      <Select.Option value="supporting">{t('characters.roleSupporting')}</Select.Option>
+                      <Select.Option value="antagonist">{t('characters.roleAntagonist')}</Select.Option>
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col span={5}>
-                  <Form.Item label="年龄" name="age" style={{ marginBottom: 12 }}>
-                    <Input placeholder="如：25岁" />
+                  <Form.Item label={t('characters.age')} name="age" style={{ marginBottom: 12 }}>
+                    <Input placeholder={t('characters.agePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={5}>
-                  <Form.Item label="性别" name="gender" style={{ marginBottom: 12 }}>
-                    <Select placeholder="性别">
-                      <Select.Option value="男">男</Select.Option>
-                      <Select.Option value="女">女</Select.Option>
-                      <Select.Option value="其他">其他</Select.Option>
+                  <Form.Item label={t('characters.gender')} name="gender" style={{ marginBottom: 12 }}>
+                    <Select placeholder={t('characters.gender')}>
+                      <Select.Option value="男">{t('characters.genderMale')}</Select.Option>
+                      <Select.Option value="女">{t('characters.genderFemale')}</Select.Option>
+                      <Select.Option value="其他">{t('characters.roleOther')}</Select.Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -1003,20 +1007,20 @@ export default function Characters() {
               {/* 第二行：性格特点、外貌描写 */}
               <Row gutter={12}>
                 <Col span={12}>
-                  <Form.Item label="性格特点" name="personality" style={{ marginBottom: 12 }}>
-                    <TextArea rows={2} placeholder="描述角色的性格特点..." />
+                  <Form.Item label={t('characters.personality')} name="personality" style={{ marginBottom: 12 }}>
+                    <TextArea rows={2} placeholder={t('characters.personalityPlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="外貌描写" name="appearance" style={{ marginBottom: 12 }}>
-                    <TextArea rows={2} placeholder="描述角色的外貌特征..." />
+                  <Form.Item label={t('characters.appearance')} name="appearance" style={{ marginBottom: 12 }}>
+                    <TextArea rows={2} placeholder={t('characters.appearancePlaceholder')} />
                   </Form.Item>
                 </Col>
               </Row>
 
               {/* 人际关系（只读，由关系管理页面维护） */}
               {editingCharacter?.relationships && (
-                <Form.Item label="人际关系（由关系管理维护）" style={{ marginBottom: 12 }}>
+                <Form.Item label={t('characters.relationshipsLabel')} style={{ marginBottom: 12 }}>
                   <Input.TextArea
                     value={editingCharacter.relationships}
                     readOnly
@@ -1027,38 +1031,38 @@ export default function Characters() {
               )}
 
               {/* 第四行：角色背景 */}
-              <Form.Item label="角色背景" name="background" style={{ marginBottom: 12 }}>
-                <TextArea rows={2} placeholder="描述角色的背景故事..." />
+              <Form.Item label={t('characters.background')} name="background" style={{ marginBottom: 12 }}>
+                <TextArea rows={2} placeholder={t('characters.backgroundPlaceholder')} />
               </Form.Item>
 
               {/* 职业信息 */}
               {(mainCareers.length > 0 || subCareers.length > 0) && (
                 <>
                   <Divider style={{ margin: '8px 0' }}>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>职业信息</Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('characters.careerInfo')}</Typography.Text>
                   </Divider>
                   {mainCareers.length > 0 && (
                     <Row gutter={12}>
                       <Col span={16}>
-                        <Form.Item label="主职业" name="main_career_id" tooltip="角色的主要修炼职业" style={{ marginBottom: 12 }}>
-                          <Select placeholder="选择主职业" allowClear size="small">
+                        <Form.Item label={t('characters.mainCareer')} name="main_career_id" tooltip={t('characters.mainCareerTooltip')} style={{ marginBottom: 12 }}>
+                          <Select placeholder={t('characters.selectMainCareer')} allowClear size="small">
                             {mainCareers.map(career => (
                               <Select.Option key={career.id} value={career.id}>
-                                {career.name}（最高{career.max_stage}阶）
+                                {career.name}{t('characters.maxStage', { max: career.max_stage })}
                               </Select.Option>
                             ))}
                           </Select>
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item label="当前阶段" name="main_career_stage" tooltip="主职业当前修炼到的阶段" style={{ marginBottom: 12 }}>
+                        <Form.Item label={t('characters.currentStage')} name="main_career_stage" tooltip={t('characters.currentStageTooltip')} style={{ marginBottom: 12 }}>
                           <InputNumber
                             min={1}
                             max={editForm.getFieldValue('main_career_id') ?
                               mainCareers.find(c => c.id === editForm.getFieldValue('main_career_id'))?.max_stage || 10
                               : 10}
                             style={{ width: '100%' }}
-                            placeholder="阶段"
+                            placeholder={t('characters.stage')}
                             size="small"
                           />
                         </Form.Item>
@@ -1070,7 +1074,7 @@ export default function Characters() {
                       {(fields, { add, remove }) => (
                         <>
                           <div style={{ marginBottom: 4 }}>
-                            <Typography.Text strong style={{ fontSize: 12 }}>副职业</Typography.Text>
+                            <Typography.Text strong style={{ fontSize: 12 }}>{t('characters.subCareer')}</Typography.Text>
                           </div>
                           <div style={{ maxHeight: '80px', overflowY: 'auto', overflowX: 'hidden', marginBottom: 8, paddingRight: 8 }}>
                             {fields.map((field) => (
@@ -1079,13 +1083,13 @@ export default function Characters() {
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'career_id']}
-                                    rules={[{ required: true, message: '请选择副职业' }]}
+                                    rules={[{ required: true, message: t('characters.subCareerRequired') }]}
                                     style={{ marginBottom: 0 }}
                                   >
-                                    <Select placeholder="选择副职业" size="small">
+                                    <Select placeholder={t('characters.selectSubCareer')} size="small">
                                       {subCareers.map(career => (
                                         <Select.Option key={career.id} value={career.id}>
-                                          {career.name}（最高{career.max_stage}阶）
+                                          {career.name}{t('characters.maxStage', { max: career.max_stage })}
                                         </Select.Option>
                                       ))}
                                     </Select>
@@ -1095,7 +1099,7 @@ export default function Characters() {
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'stage']}
-                                    rules={[{ required: true, message: '阶段' }]}
+                                    rules={[{ required: true, message: t('characters.stage') }]}
                                     style={{ marginBottom: 0 }}
                                   >
                                     <InputNumber
@@ -1105,7 +1109,7 @@ export default function Characters() {
                                         const career = subCareers.find(c => c.id === careerId);
                                         return career?.max_stage || 10;
                                       })()}
-                                      placeholder="阶段"
+                                      placeholder={t('characters.stage')}
                                       style={{ width: '100%' }}
                                       size="small"
                                     />
@@ -1118,7 +1122,7 @@ export default function Characters() {
                                     size="small"
                                     onClick={() => remove(field.name)}
                                   >
-                                    删除
+                                    {t('characters.delete')}
                                   </Button>
                                 </Col>
                               </Row>
@@ -1130,7 +1134,7 @@ export default function Characters() {
                             block
                             size="small"
                           >
-                            + 添加副职业
+                            {t('characters.addSubCareer')}
                           </Button>
                         </>
                       )}
@@ -1145,29 +1149,29 @@ export default function Characters() {
               <Row gutter={12}>
                 <Col span={10}>
                   <Form.Item
-                    label="组织名称"
+                    label={t('characters.organizationName')}
                     name="name"
-                    rules={[{ required: true, message: '请输入组织名称' }]}
+                    rules={[{ required: true, message: t('characters.organizationNameRequired') }]}
                     style={{ marginBottom: 12 }}
                   >
-                    <Input placeholder="组织名称" />
+                    <Input placeholder={t('characters.organizationName')} />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
                   <Form.Item
-                    label="组织类型"
+                    label={t('characters.organizationType')}
                     name="organization_type"
-                    rules={[{ required: true, message: '请输入组织类型' }]}
+                    rules={[{ required: true, message: t('characters.organizationTypeRequired') }]}
                     style={{ marginBottom: 12 }}
                   >
-                    <Input placeholder="如：门派、帮派" />
+                    <Input placeholder={t('characters.organizationTypePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={6}>
                   <Form.Item
-                    label="势力等级"
+                    label={t('characters.powerLevel')}
                     name="power_level"
-                    tooltip="0-100的数值"
+                    tooltip={t('characters.powerLevelTooltip')}
                     style={{ marginBottom: 12 }}
                   >
                     <InputNumber min={0} max={100} style={{ width: '100%' }} />
@@ -1177,54 +1181,54 @@ export default function Characters() {
 
               {/* 第二行：组织目的 */}
               <Form.Item
-                label="组织目的"
+                label={t('characters.organizationPurpose')}
                 name="organization_purpose"
-                rules={[{ required: true, message: '请输入组织目的' }]}
+                rules={[{ required: true, message: t('characters.organizationPurposeRequired') }]}
                 style={{ marginBottom: 12 }}
               >
-                <Input placeholder="描述组织的宗旨和目标..." />
+                <Input placeholder={t('characters.organizationPurposePlaceholder')} />
               </Form.Item>
 
               {/* 第三行：主要成员（只读展示） */}
               <Form.Item
-                label="主要成员"
+                label={t('characters.organizationMembers')}
                 name="organization_members"
                 style={{ marginBottom: 4 }}
-                tooltip="成员信息由组织管理模块维护，此处仅展示"
+                tooltip={t('characters.organizationMembersTooltip')}
               >
                 <TextArea
                   disabled
                   autoSize={{ minRows: 1, maxRows: 4 }}
-                  placeholder="暂无成员，请在组织管理中添加"
+                  placeholder={t('characters.organizationMembersPlaceholder')}
                   style={{ color: token.colorText, backgroundColor: token.colorFillAlter }}
                 />
               </Form.Item>
               <div style={{ marginBottom: 12, fontSize: 12, color: token.colorTextTertiary }}>
-                💡 请前往「组织管理」页面添加或管理组织成员
+                {t('characters.organizationMembersHint')}
               </div>
 
               {/* 第四行：所在地、代表颜色 */}
               <Row gutter={12}>
                 <Col span={12}>
-                  <Form.Item label="所在地" name="location" style={{ marginBottom: 12 }}>
-                    <Input placeholder="总部位置" />
+                  <Form.Item label={t('characters.location')} name="location" style={{ marginBottom: 12 }}>
+                    <Input placeholder={t('characters.locationPlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="代表颜色" name="color" style={{ marginBottom: 12 }}>
-                    <Input placeholder="如：金色" />
+                  <Form.Item label={t('characters.representColor')} name="color" style={{ marginBottom: 12 }}>
+                    <Input placeholder={t('characters.colorPlaceholder')} />
                   </Form.Item>
                 </Col>
               </Row>
 
               {/* 第四行：格言/口号 */}
-              <Form.Item label="格言/口号" name="motto" style={{ marginBottom: 12 }}>
-                <Input placeholder="组织的宗旨、格言或口号" />
+              <Form.Item label={t('characters.motto')} name="motto" style={{ marginBottom: 12 }}>
+                <Input placeholder={t('characters.mottoPlaceholder')} />
               </Form.Item>
 
               {/* 第五行：组织背景 */}
-              <Form.Item label="组织背景" name="background" style={{ marginBottom: 12 }}>
-                <TextArea rows={2} placeholder="描述组织的背景故事..." />
+              <Form.Item label={t('characters.organizationBackground')} name="background" style={{ marginBottom: 12 }}>
+                <TextArea rows={2} placeholder={t('characters.organizationBackgroundPlaceholder')} />
               </Form.Item>
             </>
           )}
@@ -1233,7 +1237,7 @@ export default function Characters() {
 
       {/* 手动创建角色/组织模态框 */}
       <Modal
-        title={createType === 'character' ? '创建角色' : '创建组织'}
+        title={createType === 'character' ? t('characters.createCharacter') : t('characters.createOrganization')}
         open={isCreateModalOpen}
         onCancel={() => {
           setIsCreateModalOpen(false);
@@ -1258,34 +1262,34 @@ export default function Characters() {
               <Row gutter={12}>
                 <Col span={8}>
                   <Form.Item
-                    label="角色名称"
+                    label={t('characters.characterName')}
                     name="name"
-                    rules={[{ required: true, message: '请输入角色名称' }]}
+                    rules={[{ required: true, message: t('characters.characterNameRequired') }]}
                     style={{ marginBottom: 12 }}
                   >
-                    <Input placeholder="角色名称" />
+                    <Input placeholder={t('characters.characterName')} />
                   </Form.Item>
                 </Col>
                 <Col span={6}>
-                  <Form.Item label="角色定位" name="role_type" initialValue="supporting" style={{ marginBottom: 12 }}>
+                  <Form.Item label={t('characters.roleType')} name="role_type" initialValue="supporting" style={{ marginBottom: 12 }}>
                     <Select>
-                      <Select.Option value="protagonist">主角</Select.Option>
-                      <Select.Option value="supporting">配角</Select.Option>
-                      <Select.Option value="antagonist">反派</Select.Option>
+                      <Select.Option value="protagonist">{t('characters.roleProtagonist')}</Select.Option>
+                      <Select.Option value="supporting">{t('characters.roleSupporting')}</Select.Option>
+                      <Select.Option value="antagonist">{t('characters.roleAntagonist')}</Select.Option>
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col span={5}>
-                  <Form.Item label="年龄" name="age" style={{ marginBottom: 12 }}>
-                    <Input placeholder="如：25岁" />
+                  <Form.Item label={t('characters.age')} name="age" style={{ marginBottom: 12 }}>
+                    <Input placeholder={t('characters.agePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={5}>
-                  <Form.Item label="性别" name="gender" style={{ marginBottom: 12 }}>
-                    <Select placeholder="性别">
-                      <Select.Option value="男">男</Select.Option>
-                      <Select.Option value="女">女</Select.Option>
-                      <Select.Option value="其他">其他</Select.Option>
+                  <Form.Item label={t('characters.gender')} name="gender" style={{ marginBottom: 12 }}>
+                    <Select placeholder={t('characters.gender')}>
+                      <Select.Option value="男">{t('characters.genderMale')}</Select.Option>
+                      <Select.Option value="女">{t('characters.genderFemale')}</Select.Option>
+                      <Select.Option value="其他">{t('characters.roleOther')}</Select.Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -1294,50 +1298,50 @@ export default function Characters() {
               {/* 第二行：性格特点、外貌描写 */}
               <Row gutter={12}>
                 <Col span={12}>
-                  <Form.Item label="性格特点" name="personality" style={{ marginBottom: 12 }}>
-                    <TextArea rows={2} placeholder="描述角色的性格特点..." />
+                  <Form.Item label={t('characters.personality')} name="personality" style={{ marginBottom: 12 }}>
+                    <TextArea rows={2} placeholder={t('characters.personalityPlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="外貌描写" name="appearance" style={{ marginBottom: 12 }}>
-                    <TextArea rows={2} placeholder="描述角色的外貌特征..." />
+                  <Form.Item label={t('characters.appearance')} name="appearance" style={{ marginBottom: 12 }}>
+                    <TextArea rows={2} placeholder={t('characters.appearancePlaceholder')} />
                   </Form.Item>
                 </Col>
               </Row>
 
               {/* 第三行：角色背景 */}
-              <Form.Item label="角色背景" name="background" style={{ marginBottom: 12 }}>
-                <TextArea rows={2} placeholder="描述角色的背景故事..." />
+              <Form.Item label={t('characters.background')} name="background" style={{ marginBottom: 12 }}>
+                <TextArea rows={2} placeholder={t('characters.backgroundPlaceholder')} />
               </Form.Item>
 
               {/* 职业信息 - 折叠区域 */}
               {(mainCareers.length > 0 || subCareers.length > 0) && (
                 <>
                   <Divider style={{ margin: '8px 0' }}>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>职业信息（可选）</Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('characters.careerInfoOptional')}</Typography.Text>
                   </Divider>
                   {mainCareers.length > 0 && (
                     <Row gutter={12}>
                       <Col span={16}>
-                        <Form.Item label="主职业" name="main_career_id" tooltip="角色的主要修炼职业" style={{ marginBottom: 12 }}>
-                          <Select placeholder="选择主职业" allowClear size="small">
+                        <Form.Item label={t('characters.mainCareer')} name="main_career_id" tooltip={t('characters.mainCareerTooltip')} style={{ marginBottom: 12 }}>
+                          <Select placeholder={t('characters.selectMainCareer')} allowClear size="small">
                             {mainCareers.map(career => (
                               <Select.Option key={career.id} value={career.id}>
-                                {career.name}（最高{career.max_stage}阶）
+                                {career.name}{t('characters.maxStage', { max: career.max_stage })}
                               </Select.Option>
                             ))}
                           </Select>
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item label="当前阶段" name="main_career_stage" tooltip="主职业当前修炼到的阶段" style={{ marginBottom: 12 }}>
+                        <Form.Item label={t('characters.currentStage')} name="main_career_stage" tooltip={t('characters.currentStageTooltip')} style={{ marginBottom: 12 }}>
                           <InputNumber
                             min={1}
                             max={createForm.getFieldValue('main_career_id') ?
                               mainCareers.find(c => c.id === createForm.getFieldValue('main_career_id'))?.max_stage || 10
                               : 10}
                             style={{ width: '100%' }}
-                            placeholder="阶段"
+                            placeholder={t('characters.stage')}
                             size="small"
                           />
                         </Form.Item>
@@ -1349,7 +1353,7 @@ export default function Characters() {
                       {(fields, { add, remove }) => (
                         <>
                           <div style={{ marginBottom: 4 }}>
-                            <Typography.Text strong style={{ fontSize: 12 }}>副职业</Typography.Text>
+                            <Typography.Text strong style={{ fontSize: 12 }}>{t('characters.subCareer')}</Typography.Text>
                           </div>
                           <div style={{ maxHeight: '80px', overflowY: 'auto', overflowX: 'hidden', marginBottom: 8, paddingRight: 8 }}>
                             {fields.map((field) => (
@@ -1358,13 +1362,13 @@ export default function Characters() {
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'career_id']}
-                                    rules={[{ required: true, message: '请选择副职业' }]}
+                                    rules={[{ required: true, message: t('characters.subCareerRequired') }]}
                                     style={{ marginBottom: 0 }}
                                   >
-                                    <Select placeholder="选择副职业" size="small">
+                                    <Select placeholder={t('characters.selectSubCareer')} size="small">
                                       {subCareers.map(career => (
                                         <Select.Option key={career.id} value={career.id}>
-                                          {career.name}（最高{career.max_stage}阶）
+                                          {career.name}{t('characters.maxStage', { max: career.max_stage })}
                                         </Select.Option>
                                       ))}
                                     </Select>
@@ -1374,7 +1378,7 @@ export default function Characters() {
                                   <Form.Item
                                     {...field}
                                     name={[field.name, 'stage']}
-                                    rules={[{ required: true, message: '阶段' }]}
+                                    rules={[{ required: true, message: t('characters.stage') }]}
                                     style={{ marginBottom: 0 }}
                                   >
                                     <InputNumber
@@ -1384,7 +1388,7 @@ export default function Characters() {
                                         const career = subCareers.find(c => c.id === careerId);
                                         return career?.max_stage || 10;
                                       })()}
-                                      placeholder="阶段"
+                                      placeholder={t('characters.stage')}
                                       style={{ width: '100%' }}
                                       size="small"
                                     />
@@ -1397,7 +1401,7 @@ export default function Characters() {
                                     size="small"
                                     onClick={() => remove(field.name)}
                                   >
-                                    删除
+                                    {t('characters.delete')}
                                   </Button>
                                 </Col>
                               </Row>
@@ -1409,7 +1413,7 @@ export default function Characters() {
                             block
                             size="small"
                           >
-                            + 添加副职业
+                            {t('characters.addSubCareer')}
                           </Button>
                         </>
                       )}
@@ -1424,30 +1428,30 @@ export default function Characters() {
               <Row gutter={12}>
                 <Col span={10}>
                   <Form.Item
-                    label="组织名称"
+                    label={t('characters.organizationName')}
                     name="name"
-                    rules={[{ required: true, message: '请输入组织名称' }]}
+                    rules={[{ required: true, message: t('characters.organizationNameRequired') }]}
                     style={{ marginBottom: 12 }}
                   >
-                    <Input placeholder="组织名称" />
+                    <Input placeholder={t('characters.organizationName')} />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
                   <Form.Item
-                    label="组织类型"
+                    label={t('characters.organizationType')}
                     name="organization_type"
-                    rules={[{ required: true, message: '请输入组织类型' }]}
+                    rules={[{ required: true, message: t('characters.organizationTypeRequired') }]}
                     style={{ marginBottom: 12 }}
                   >
-                    <Input placeholder="如：门派、帮派" />
+                    <Input placeholder={t('characters.organizationTypePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={6}>
                   <Form.Item
-                    label="势力等级"
+                    label={t('characters.powerLevel')}
                     name="power_level"
                     initialValue={50}
-                    tooltip="0-100的数值"
+                    tooltip={t('characters.powerLevelTooltip')}
                     style={{ marginBottom: 12 }}
                   >
                     <InputNumber min={0} max={100} style={{ width: '100%' }} />
@@ -1457,36 +1461,36 @@ export default function Characters() {
 
               {/* 第二行：组织目的 */}
               <Form.Item
-                label="组织目的"
+                label={t('characters.organizationPurpose')}
                 name="organization_purpose"
-                rules={[{ required: true, message: '请输入组织目的' }]}
+                rules={[{ required: true, message: t('characters.organizationPurposeRequired') }]}
                 style={{ marginBottom: 12 }}
               >
-                <Input placeholder="描述组织的宗旨和目标..." />
+                <Input placeholder={t('characters.organizationPurposePlaceholder')} />
               </Form.Item>
 
               {/* 第三行：所在地、代表颜色 */}
               <Row gutter={12}>
                 <Col span={12}>
-                  <Form.Item label="所在地" name="location" style={{ marginBottom: 12 }}>
-                    <Input placeholder="总部位置" />
+                  <Form.Item label={t('characters.location')} name="location" style={{ marginBottom: 12 }}>
+                    <Input placeholder={t('characters.locationPlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="代表颜色" name="color" style={{ marginBottom: 12 }}>
-                    <Input placeholder="如：金色" />
+                  <Form.Item label={t('characters.representColor')} name="color" style={{ marginBottom: 12 }}>
+                    <Input placeholder={t('characters.colorPlaceholder')} />
                   </Form.Item>
                 </Col>
               </Row>
 
               {/* 第四行：格言/口号 */}
-              <Form.Item label="格言/口号" name="motto" style={{ marginBottom: 12 }}>
-                <Input placeholder="组织的宗旨、格言或口号" />
+              <Form.Item label={t('characters.motto')} name="motto" style={{ marginBottom: 12 }}>
+                <Input placeholder={t('characters.mottoPlaceholder')} />
               </Form.Item>
 
               {/* 第五行：组织背景 */}
-              <Form.Item label="组织背景" name="background" style={{ marginBottom: 12 }}>
-                <TextArea rows={2} placeholder="描述组织的背景故事..." />
+              <Form.Item label={t('characters.organizationBackground')} name="background" style={{ marginBottom: 12 }}>
+                <TextArea rows={2} placeholder={t('characters.organizationBackgroundPlaceholder')} />
               </Form.Item>
             </>
           )}
@@ -1497,10 +1501,10 @@ export default function Characters() {
                 setIsCreateModalOpen(false);
                 createForm.resetFields();
               }}>
-                取消
+                {t('characters.cancel')}
               </Button>
               <Button type="primary" htmlType="submit">
-                创建
+                {t('characters.create')}
               </Button>
             </Space>
           </Form.Item>
@@ -1509,7 +1513,7 @@ export default function Characters() {
 
       {/* 导入对话框 */}
       <Modal
-        title="导入角色/组织"
+        title={t('characters.importTitle')}
         open={isImportModalOpen}
         onCancel={() => setIsImportModalOpen(false)}
         footer={null}
@@ -1519,7 +1523,7 @@ export default function Characters() {
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <DownloadOutlined style={{ fontSize: 48, color: '#1890ff', marginBottom: 16 }} />
           <p style={{ fontSize: 16, marginBottom: 24 }}>
-            选择之前导出的角色/组织JSON文件进行导入
+            {t('characters.importDescription')}
           </p>
           <input
             ref={fileInputRef}
@@ -1540,15 +1544,15 @@ export default function Characters() {
             icon={<ImportOutlined />}
             onClick={() => fileInputRef.current?.click()}
           >
-            选择文件
+            {t('characters.selectFile')}
           </Button>
           <Divider />
           <div style={{ textAlign: 'left', fontSize: 12, color: '#666' }}>
-            <p style={{ marginBottom: 8 }}><strong>说明：</strong></p>
+            <p style={{ marginBottom: 8 }}><strong>{t('characters.notesLabel')}</strong></p>
             <ul style={{ marginLeft: 20 }}>
-              <li>支持导入.json格式的角色/组织文件</li>
-              <li>重复名称的角色/组织将被跳过</li>
-              <li>职业信息如不存在将被忽略</li>
+              <li>{t('characters.noteJsonFormat')}</li>
+              <li>{t('characters.noteDuplicateSkipped')}</li>
+              <li>{t('characters.noteCareerIgnored')}</li>
             </ul>
           </div>
         </div>

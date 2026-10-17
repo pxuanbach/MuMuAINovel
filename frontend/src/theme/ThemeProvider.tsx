@@ -1,10 +1,12 @@
 import { ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
+import dayjs from 'dayjs';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { getThemeConfig, type ResolvedThemeMode } from './themeConfig';
 import { ThemeModeContext } from './themeContext';
 import { getStoredThemeMode, setStoredThemeMode, type ThemeMode } from './themeStorage';
+import { getLocaleBundle } from '../i18n/antdLocale';
+import { useLocale } from '../i18n/useLocale';
 
 const getSystemResolvedMode = (): ResolvedThemeMode => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -34,8 +36,14 @@ const hexToRgba = (hexColor: string, alpha: number): string => {
 
 export const ThemeProvider = ({ children }: PropsWithChildren) => {
   const [mode, setModeState] = useState<ThemeMode>(() => getStoredThemeMode());
+  const { locale } = useLocale();
+  const { antdLocale, dayjsLocale } = useMemo(() => getLocaleBundle(locale), [locale]);
   const [systemMode, setSystemMode] = useState<ResolvedThemeMode>(() => getSystemResolvedMode());
   const transitionCleanupRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    dayjs.locale(dayjsLocale);
+  }, [dayjsLocale]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -142,7 +150,7 @@ export const ThemeProvider = ({ children }: PropsWithChildren) => {
   return (
     <ThemeModeContext.Provider value={contextValue}>
       <ConfigProvider
-        locale={zhCN}
+        locale={antdLocale}
         theme={{
           ...themeConfig,
           cssVar: true,

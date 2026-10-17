@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { List, Button, Modal, Form, Input, Select, message, Empty, Space, Badge, Tag, Card, InputNumber, Alert, Radio, Descriptions, Collapse, Popconfirm, Pagination, theme } from 'antd';
 import { EditOutlined, FileTextOutlined, ThunderboltOutlined, LockOutlined, DownloadOutlined, SettingOutlined, FundOutlined, SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, RocketOutlined, StopOutlined, InfoCircleOutlined, CaretRightOutlined, DeleteOutlined, BookOutlined, FormOutlined, PlusOutlined, ReadOutlined } from '@ant-design/icons';
 import { useStore } from '../store';
@@ -48,6 +49,7 @@ const setCachedWordCount = (value: number): void => {
 
 export default function Chapters() {
   const { currentProject, chapters, outlines, setCurrentChapter, setCurrentProject } = useStore();
+  const { t } = useTranslation();
   const [modal, contextHolder] = Modal.useModal();
   const { token } = theme.useToken();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -377,9 +379,9 @@ export default function Chapters() {
           activeAnalysisPollingIdsRef.current.delete(chapterId);
 
           if (task?.status === 'completed') {
-            message.success('章节分析完成');
+            message.success(t('chapters.messages.analysisCompleted'));
           } else if (task?.status === 'failed') {
-            message.error(`章节分析失败: ${task.error_message || '未知错误'}`);
+            message.error(t('chapters.messages.analysisFailed', { error: task.error_message || t('chapters.messages.unknownError') }));
           }
         }
       });
@@ -482,7 +484,7 @@ export default function Chapters() {
       }
     } catch (error) {
       console.error('加载写作风格失败:', error);
-      message.error('加载写作风格失败');
+      message.error(t('chapters.messages.loadStylesFailed'));
     }
   };
 
@@ -561,7 +563,7 @@ export default function Chapters() {
         // 启动轮询
         startBatchPolling(task.batch_id);
 
-        message.info('检测到未完成的批量生成任务，请查看任务列表');
+        message.info(t('chapters.messages.batchTaskDetected'));
       }
     } catch (error) {
       console.error('检查批量生成任务失败:', error);
@@ -627,7 +629,7 @@ export default function Chapters() {
       if (!groups[key]) {
         groups[key] = {
           outlineId: chapter.outline_id || null,
-          outlineTitle: chapter.outline_title || '未分类章节',
+          outlineTitle: chapter.outline_title || t('chapters.page.uncategorizedChapter'),
           outlineOrder: chapter.outline_order ?? 999,
           chapters: []
         };
@@ -673,7 +675,7 @@ export default function Chapters() {
       if (!groups[key]) {
         groups[key] = {
           outlineId: chapter.outline_id || null,
-          outlineTitle: chapter.outline_title || '未分类章节',
+          outlineTitle: chapter.outline_title || t('chapters.page.uncategorizedChapter'),
           outlineOrder: chapter.outline_order ?? 999,
           chapters: []
         };
@@ -707,12 +709,12 @@ export default function Chapters() {
       if (incompleteChapterNumbers.length > 0) {
         gateMap[chapter.id] = {
           canGenerate: false,
-          reason: `需要先完成前置章节：第 ${incompleteChapterNumbers.join('、')} 章`
+          reason: t('chapters.page.gateIncomplete', { chapters: incompleteChapterNumbers.join('、') })
         };
       } else if (unanalyzedChapters.length > 0) {
         gateMap[chapter.id] = {
           canGenerate: false,
-          reason: `需要先分析前置章节：第 ${unanalyzedChapters.map(c => c.chapterNumber).join('、')} 章 (${unanalyzedChapters.map(c => c.reason).join('、')})`
+          reason: t('chapters.page.gateUnanalyzed', { chapters: unanalyzedChapters.map(c => c.chapterNumber).join('、'), reasons: unanalyzedChapters.map(c => c.reason).join('、') })
         };
       } else {
         gateMap[chapter.id] = { canGenerate: true, reason: '' };
@@ -725,15 +727,15 @@ export default function Chapters() {
 
       const task = analysisTasksMap[chapter.id];
       if (!task || !task.has_task) {
-        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: '未分析' });
+        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: t('chapters.analyzeStatus.notAnalyzed') });
       } else if (task.status === 'pending') {
-        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: '等待分析' });
+        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: t('chapters.analyzeStatus.waiting') });
       } else if (task.status === 'running') {
-        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: '分析中' });
+        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: t('chapters.analyzeStatus.analyzing') });
       } else if (task.status === 'failed') {
-        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: '分析失败' });
+        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: t('chapters.analyzeStatus.failed') });
       } else if (task.status !== 'completed') {
-        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: '状态未知' });
+        unanalyzedChapters.push({ chapterNumber: chapter.chapter_number, reason: t('chapters.analyzeStatus.unknown') });
       }
     });
 
@@ -756,15 +758,15 @@ export default function Chapters() {
   const getNarrativePerspectiveText = (perspective?: string): string => {
     const texts: Record<string, string> = {
       // 英文值映射（向后兼容）
-      'first_person': '第一人称（我）',
-      'third_person': '第三人称（他/她）',
-      'omniscient': '全知视角',
+      'first_person': t('chapters.narrative.firstPerson'),
+      'third_person': t('chapters.narrative.thirdPerson'),
+      'omniscient': t('chapters.narrative.omniscient'),
       // 中文值映射（项目设置使用）
-      '第一人称': '第一人称（我）',
-      '第三人称': '第三人称（他/她）',
-      '全知视角': '全知视角',
+      '第一人称': t('chapters.narrative.firstPerson'),
+      '第三人称': t('chapters.narrative.thirdPerson'),
+      '全知视角': t('chapters.narrative.omniscient'),
     };
-    return texts[perspective || ''] || '第三人称（默认）';
+    return texts[perspective || ''] || t('chapters.narrative.thirdDefault');
   };
 
   const canGenerateChapter = (chapter: Chapter): boolean => {
@@ -793,11 +795,11 @@ export default function Chapters() {
       // 刷新章节列表以获取完整的章节数据（包括outline_title等联查字段）
       await refreshChapters();
 
-      message.success('章节更新成功');
+      message.success(t('chapters.messages.updateSuccess'));
       setIsModalOpen(false);
       form.resetFields();
     } catch {
-      message.error('操作失败');
+      message.error(t('chapters.messages.operationFailed'));
     }
   };
 
@@ -829,10 +831,10 @@ export default function Chapters() {
       const updatedProject = await projectApi.getProject(currentProject.id);
       setCurrentProject(updatedProject);
 
-      message.success('章节保存成功');
+      message.success(t('chapters.messages.saveSuccess'));
       setIsEditorOpen(false);
     } catch {
-      message.error('保存失败');
+      message.error(t('chapters.messages.saveFailed'));
     }
   };
 
@@ -843,7 +845,7 @@ export default function Chapters() {
       setIsContinuing(true);
       setIsGenerating(true);
       setSingleChapterProgress(0);
-      setSingleChapterProgressMessage('准备开始生成...');
+      setSingleChapterProgressMessage(t('sse.preparing'));
 
       const result = await generateChapterContentStream(
         editingId,
@@ -869,7 +871,7 @@ export default function Chapters() {
         selectedSkillKey  // 传递选中的Skill
       );
 
-      message.success('AI创作成功，正在分析章节内容...');
+      message.success(t('chapters.messages.aiCreateSuccess'));
 
       // 如果返回了分析任务ID，启动轮询
       if (result?.analysis_task_id) {
@@ -890,7 +892,7 @@ export default function Chapters() {
       }
     } catch (error) {
       const apiError = error as ApiError;
-      message.error('AI创作失败：' + (apiError.response?.data?.detail || apiError.message || '未知错误'));
+      message.error(t('chapters.messages.aiCreateFailed', { error: apiError.response?.data?.detail || apiError.message || t('chapters.messages.unknownError') }));
     } finally {
       setIsContinuing(false);
       setIsGenerating(false);
@@ -907,21 +909,21 @@ export default function Chapters() {
     const selectedStyle = writingStyles.find(s => s.id === selectedStyleId);
 
     const instance = modal.confirm({
-      title: 'AI创作章节内容',
+      title: t('chapters.generateModal.title'),
       width: 700,
       centered: true,
       content: (
         <div style={{ marginTop: 16 }}>
-          <p>AI将根据以下信息创作本章内容：</p>
+          <p>{t('chapters.generateModal.intro')}</p>
           <ul>
-            <li>章节大纲和要求</li>
-            <li>项目的世界观设定</li>
-            <li>相关角色信息</li>
-            <li><strong>前面已完成章节的内容（确保剧情连贯）</strong></li>
+            <li>{t('chapters.generateModal.liOutline')}</li>
+            <li>{t('chapters.generateModal.liWorldview')}</li>
+            <li>{t('chapters.generateModal.liCharacters')}</li>
+            <li><strong>{t('chapters.generateModal.liPrevious')}</strong></li>
             {selectedStyle && (
-              <li><strong>写作风格：{selectedStyle.name}</strong></li>
+              <li><strong>{t('chapters.generateModal.liStyle', { name: selectedStyle.name })}</strong></li>
             )}
-            <li><strong>目标字数：{targetWordCount}字</strong></li>
+            <li><strong>{t('chapters.generateModal.liWordCount', { num: targetWordCount })}</strong></li>
           </ul>
 
           {previousChapters.length > 0 && (
@@ -933,29 +935,29 @@ export default function Chapters() {
               border: `1px solid ${token.colorInfoBorder}`
             }}>
               <div style={{ marginBottom: 8, fontWeight: 500, color: token.colorPrimary }}>
-                📚 将引用的前置章节（共{previousChapters.length}章）：
+                {t('chapters.generateModal.prevHeader', { num: previousChapters.length })}
               </div>
               <div style={{ maxHeight: 150, overflowY: 'auto' }}>
                 {previousChapters.map(ch => (
                   <div key={ch.id} style={{ padding: '4px 0', fontSize: 13 }}>
-                    ✓ 第{ch.chapter_number}章：{ch.title} ({ch.word_count || 0}字)
+                    {t('chapters.generateModal.prevItem', { num: ch.chapter_number, title: ch.title, count: ch.word_count || 0 })}
                   </div>
                 ))}
               </div>
               <div style={{ marginTop: 8, fontSize: 12, color: token.colorTextSecondary }}>
-                💡 AI会参考这些章节内容，确保情节连贯、角色状态一致
+                {t('chapters.generateModal.prevHint')}
               </div>
             </div>
           )}
 
           <p style={{ color: token.colorError, marginTop: 16, marginBottom: 0 }}>
-            ⚠️ 注意：此操作将覆盖当前章节内容
+            {t('chapters.generateModal.warning')}
           </p>
         </div>
       ),
-      okText: '开始创作',
+      okText: t('chapters.generateModal.okText'),
       okButtonProps: { danger: true },
-      cancelText: '取消',
+      cancelText: t('common.cancel'),
       onOk: async () => {
         instance.update({
           okButtonProps: { danger: true, loading: true },
@@ -967,7 +969,7 @@ export default function Chapters() {
 
         try {
           if (!selectedStyleId) {
-            message.error('请先选择写作风格');
+            message.error(t('chapters.messages.selectStyleFirst'));
             instance.update({
               okButtonProps: { danger: true, loading: false },
               cancelButtonProps: { disabled: false },
@@ -991,7 +993,7 @@ export default function Chapters() {
       },
       onCancel: () => {
         if (isGenerating) {
-          message.warning('AI正在创作中，请等待完成');
+          message.warning(t('chapters.messages.aiGeneratingWait'));
           return false;
         }
       },
@@ -1004,7 +1006,7 @@ export default function Chapters() {
   const handleBackgroundGenerate = async () => {
     if (!editingId) return;
     if (!selectedStyleId) {
-      message.error("请先选择写作风格");
+      message.error(t('chapters.messages.selectStyleFirst'));
       return;
     }
 
@@ -1046,22 +1048,22 @@ export default function Chapters() {
           await loadAnalysisTasks(latestChapters);
         },
         async () => {
-          message.success("后台章节生成和分析完成！");
+          message.success(t('chapters.messages.backgroundDone'));
           const latestChapters = await refreshGeneratedChapter();
           await loadAnalysisTasks(latestChapters);
         },
         async (error) => {
-          message.error("后台章节任务失败: " + error);
+          message.error(t('chapters.messages.backgroundFailed', { error }));
           const latestChapters = await refreshGeneratedChapter();
           await loadAnalysisTasks(latestChapters);
         }
       );
 
-      message.info("章节生成任务已提交，可在右下角任务面板查看进度");
+      message.info(t('chapters.messages.backgroundSubmitted'));
       // 通知悬浮任务框刷新
       eventBus.emit('background-task-created');
     } catch {
-      message.error("创建后台任务失败");
+      message.error(t('chapters.messages.createBackgroundFailed'));
     }
   };
   const getStatusColor = (status: string) => {
@@ -1076,32 +1078,32 @@ export default function Chapters() {
 
   const getStatusText = (status: string) => {
     const texts: Record<string, string> = {
-      'draft': '草稿',
-      'pending': '待处理',
-      'writing': '创作中',
-      'completed': '已完成',
+      'draft': t('chapters.status.draft'),
+      'pending': t('chapters.status.pending'),
+      'writing': t('chapters.status.writing'),
+      'completed': t('chapters.status.completed'),
     };
     return texts[status] || status;
   };
 
   const handleExport = () => {
     if (chapters.length === 0) {
-      message.warning('当前项目没有章节，无法导出');
+      message.warning(t('chapters.messages.noChaptersExport'));
       return;
     }
 
     modal.confirm({
-      title: '导出项目章节',
-      content: `确定要将《${currentProject.title}》的所有章节导出为TXT文件吗？`,
+      title: t('chapters.exportModal.title'),
+      content: t('chapters.exportModal.content', { title: currentProject.title }),
       centered: true,
-      okText: '确定导出',
-      cancelText: '取消',
+      okText: t('chapters.exportModal.okText'),
+      cancelText: t('common.cancel'),
       onOk: () => {
         try {
           projectApi.exportProject(currentProject.id);
-          message.success('开始下载导出文件');
+          message.success(t('chapters.messages.downloadStarted'));
         } catch {
-          message.error('导出失败，请重试');
+          message.error(t('chapters.messages.exportFailed'));
         }
       },
     });
@@ -1131,17 +1133,17 @@ export default function Chapters() {
         });
 
         message.success(
-          `已加入 ${result.total_started} 章顺序分析队列（跳过已分析 ${result.total_already_completed} 章，分析中/排队中 ${result.total_skipped_running} 章）`
+          t('chapters.messages.batchAnalyzeQueued', { started: result.total_started, completed: result.total_already_completed, running: result.total_skipped_running })
         );
       } else {
-        message.info('没有可启动分析的章节：当前章节要么无内容、要么已分析完成、要么正在分析中');
+        message.info(t('chapters.messages.batchAnalyzeNone'));
       }
 
       // 刷新一次状态，确保前端与后端一致
       await loadAnalysisTasks();
     } catch (error: unknown) {
       const err = error as Error;
-      message.error(`一键分析失败：${err.message || '未知错误'}`);
+      message.error(t('chapters.messages.batchAnalyzeFailed', { error: err.message || t('chapters.messages.unknownError') }));
     } finally {
       setBatchAnalyzingUnanalyzed(false);
     }
@@ -1172,7 +1174,7 @@ export default function Chapters() {
     console.log('[批量生成] 最终使用的model:', model);
 
     if (!styleId) {
-      message.error('请选择写作风格');
+      message.error(t('chapters.messages.selectStyle'));
       return;
     }
 
@@ -1222,7 +1224,7 @@ export default function Chapters() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || '创建批量生成任务失败');
+        throw new Error(error.detail || t('chapters.messages.batchCreateFailed'));
       }
 
       const result = await response.json();
@@ -1235,14 +1237,14 @@ export default function Chapters() {
         estimated_time_minutes: result.estimated_time_minutes,
       });
 
-      message.success(`批量生成任务已创建，预计需要 ${result.estimated_time_minutes} 分钟，可在右下角任务面板查看进度`);
+      message.success(t('chapters.messages.batchCreated', { minutes: result.estimated_time_minutes }));
       // 通知悬浮任务框刷新
       eventBus.emit('background-task-created');
 
       // 🔔 触发浏览器通知（任务开始）
       showBrowserNotification(
-        '批量生成已启动',
-        `开始生成 ${result.chapters_to_generate.length} 章，预计需要 ${result.estimated_time_minutes} 分钟`,
+        t('chapters.notifications.batchStartedTitle'),
+        t('chapters.notifications.batchStartedBody', { num: result.chapters_to_generate.length, minutes: result.estimated_time_minutes }),
         'info'
       );
 
@@ -1251,7 +1253,7 @@ export default function Chapters() {
 
     } catch (error: unknown) {
       const err = error as Error;
-      message.error('创建批量生成任务失败：' + (err.message || '未知错误'));
+      message.error(t('chapters.messages.createFailed', { error: err.message || t('chapters.messages.unknownError') }));
       setBatchGenerating(false);
       setBatchGenerateVisible(false);
     }
@@ -1310,23 +1312,23 @@ export default function Chapters() {
           }
 
           if (status.status === 'completed') {
-            message.success(`批量生成完成！成功生成 ${status.completed} 章`);
+            message.success(t('chapters.messages.batchComplete', { num: status.completed }));
             // 🔔 触发浏览器通知
             showBrowserNotification(
-              '批量生成完成',
-              `《${currentProject?.title || '项目'}》成功生成 ${status.completed} 章节`,
+              t('chapters.notifications.batchDoneTitle'),
+              t('chapters.notifications.batchDoneBody', { title: currentProject?.title || t('chapters.notifications.projectFallback'), num: status.completed }),
               'success'
             );
           } else if (status.status === 'failed') {
-            message.error(`批量生成失败：${status.error_message || '未知错误'}`);
+            message.error(t('chapters.messages.batchFailed', { error: status.error_message || t('chapters.messages.unknownError') }));
             // 🔔 触发浏览器通知
             showBrowserNotification(
-              '批量生成失败',
-              status.error_message || '未知错误',
+              t('chapters.notifications.batchFailedTitle'),
+              status.error_message || t('chapters.messages.unknownError'),
               'error'
             );
           } else if (status.status === 'cancelled') {
-            message.warning('批量生成已取消');
+            message.warning(t('chapters.messages.batchCancelled'));
           }
 
           // 延迟关闭对话框，让用户看到最终状态
@@ -1358,10 +1360,10 @@ export default function Chapters() {
       });
 
       if (!response.ok) {
-        throw new Error('取消失败');
+        throw new Error(t('chapters.messages.cancelFailed'));
       }
 
-      message.success('批量生成已取消');
+      message.success(t('chapters.messages.batchCancelled'));
 
       // 取消后立即刷新章节列表和分析任务，显示已生成的章节
       await refreshChapters();
@@ -1374,7 +1376,7 @@ export default function Chapters() {
       }
     } catch (error: unknown) {
       const err = error as Error;
-      message.error('取消失败：' + (err.message || '未知错误'));
+      message.error(t('chapters.messages.cancelFailedDetail', { error: err.message || t('chapters.messages.unknownError') }));
     }
   };
 
@@ -1386,7 +1388,7 @@ export default function Chapters() {
     );
 
     if (!firstIncompleteChapter) {
-      message.info('所有章节都已生成内容');
+      message.info(t('chapters.messages.allGenerated'));
       return;
     }
 
@@ -1427,7 +1429,7 @@ export default function Chapters() {
       : 1;
 
     modal.confirm({
-      title: '手动创建章节',
+      title: t('chapters.manualCreate.title'),
       width: 600,
       centered: true,
       content: (
@@ -1441,66 +1443,66 @@ export default function Chapters() {
           style={{ marginTop: 16 }}
         >
           <Form.Item
-            label="章节序号"
+            label={t('chapters.manualCreate.chapterNumberLabel')}
             name="chapter_number"
-            rules={[{ required: true, message: '请输入章节序号' }]}
-            tooltip="建议按顺序创建章节，确保内容连贯性"
+            rules={[{ required: true, message: t('chapters.manualCreate.chapterNumberRequired') }]}
+            tooltip={t('chapters.manualCreate.chapterNumberTooltip')}
           >
-            <InputNumber min={1} style={{ width: '100%' }} placeholder="自动计算的下一个序号" />
+            <InputNumber min={1} style={{ width: '100%' }} placeholder={t('chapters.manualCreate.chapterNumberPlaceholder')} />
           </Form.Item>
 
           <Form.Item
-            label="章节标题"
+            label={t('chapters.manualCreate.titleLabel')}
             name="title"
-            rules={[{ required: true, message: '请输入标题' }]}
+            rules={[{ required: true, message: t('chapters.manualCreate.titleRequired') }]}
           >
-            <Input placeholder="例如：第一章 初遇" />
+            <Input placeholder={t('chapters.manualCreate.titlePlaceholder')} />
           </Form.Item>
 
           <Form.Item
-            label="关联大纲"
+            label={t('chapters.manualCreate.outlineLabel')}
             name="outline_id"
-            rules={[{ required: true, message: '请选择关联的大纲' }]}
-            tooltip="one-to-many模式下，章节必须关联到大纲"
+            rules={[{ required: true, message: t('chapters.manualCreate.outlineRequired') }]}
+            tooltip={t('chapters.manualCreate.outlineTooltip')}
           >
-            <Select placeholder="请选择所属大纲">
+            <Select placeholder={t('chapters.manualCreate.outlinePlaceholder')}>
               {/* 直接使用 store 中的 outlines 数据，而不是从现有章节中提取 */}
               {[...outlines]
                 .sort((a, b) => a.order_index - b.order_index)
                 .map(outline => (
                   <Select.Option key={outline.id} value={outline.id}>
-                    第{outline.order_index}卷：{outline.title}
+                    {t('chapters.manualCreate.outlineOption', { order: outline.order_index, title: outline.title })}
                   </Select.Option>
                 ))}
             </Select>
           </Form.Item>
 
           <Form.Item
-            label="章节摘要（可选）"
+            label={t('chapters.manualCreate.summaryLabel')}
             name="summary"
-            tooltip="简要描述本章的主要内容和情节发展"
+            tooltip={t('chapters.manualCreate.summaryTooltip')}
           >
             <TextArea
               rows={4}
-              placeholder="简要描述本章内容..."
+              placeholder={t('chapters.manualCreate.summaryPlaceholder')}
             />
           </Form.Item>
 
           <Form.Item
-            label="状态"
+            label={t('chapters.manualCreate.statusLabel')}
             name="status"
           >
             <Select>
-              <Select.Option value="draft">草稿</Select.Option>
-              <Select.Option value="pending">待处理</Select.Option>
-              <Select.Option value="writing">创作中</Select.Option>
-              <Select.Option value="completed">已完成</Select.Option>
+              <Select.Option value="draft">{t('chapters.status.draft')}</Select.Option>
+              <Select.Option value="pending">{t('chapters.status.pending')}</Select.Option>
+              <Select.Option value="writing">{t('chapters.status.writing')}</Select.Option>
+              <Select.Option value="completed">{t('chapters.status.completed')}</Select.Option>
             </Select>
           </Form.Item>
         </Form>
       ),
-      okText: '创建',
-      cancelText: '取消',
+      okText: t('chapters.manualCreate.okText'),
+      cancelText: t('common.cancel'),
       onOk: async () => {
         const values = await manualCreateForm.validateFields();
 
@@ -1512,14 +1514,14 @@ export default function Chapters() {
         if (conflictChapter) {
           // 显示冲突提示Modal
           modal.confirm({
-            title: '章节序号冲突',
+            title: t('chapters.manualCreate.conflictTitle'),
             icon: <InfoCircleOutlined style={{ color: token.colorError }} />,
             width: 500,
             centered: true,
             content: (
               <div>
                 <p style={{ marginBottom: 12 }}>
-                  第 <strong>{values.chapter_number}</strong> 章已存在：
+                  {t('chapters.manualCreate.conflictExists', { num: values.chapter_number })}
                 </p>
                 <div style={{
                   padding: 12,
@@ -1528,24 +1530,24 @@ export default function Chapters() {
                   border: `1px solid ${token.colorWarningBorder}`,
                   marginBottom: 12
                 }}>
-                  <div><strong>标题：</strong>{conflictChapter.title}</div>
-                  <div><strong>状态：</strong>{getStatusText(conflictChapter.status)}</div>
-                  <div><strong>字数：</strong>{conflictChapter.word_count || 0}字</div>
+                  <div><strong>{t('chapters.manualCreate.conflictTitleLabel')}</strong>{conflictChapter.title}</div>
+                  <div><strong>{t('chapters.manualCreate.conflictStatusLabel')}</strong>{getStatusText(conflictChapter.status)}</div>
+                  <div><strong>{t('chapters.manualCreate.conflictWordCountLabel')}</strong>{t('chapters.page.wordsBadge', { num: conflictChapter.word_count || 0 })}</div>
                   {conflictChapter.outline_title && (
-                    <div><strong>所属大纲：</strong>{conflictChapter.outline_title}</div>
+                    <div><strong>{t('chapters.manualCreate.conflictOutlineLabel')}</strong>{conflictChapter.outline_title}</div>
                   )}
                 </div>
                 <p style={{ color: token.colorError, marginBottom: 8 }}>
-                  ⚠️ 是否删除旧章节并创建新章节？
+                  {t('chapters.manualCreate.conflictConfirm')}
                 </p>
                 <p style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 0 }}>
-                  删除后将无法恢复，章节内容和分析结果都将被删除。
+                  {t('chapters.manualCreate.conflictWarning')}
                 </p>
               </div>
             ),
-            okText: '删除并创建',
+            okText: t('chapters.manualCreate.conflictOkText'),
             okButtonProps: { danger: true },
-            cancelText: '取消',
+            cancelText: t('common.cancel'),
             onOk: async () => {
               try {
                 // 先删除旧章节
@@ -1560,7 +1562,7 @@ export default function Chapters() {
                   ...values
                 });
 
-                message.success('已删除旧章节并创建新章节');
+                message.success(t('chapters.messages.conflictResolved'));
                 await refreshChapters();
 
                 // 刷新项目信息以更新字数统计
@@ -1570,7 +1572,7 @@ export default function Chapters() {
                 manualCreateForm.resetFields();
               } catch (error: unknown) {
                 const err = error as Error;
-                message.error('操作失败：' + (err.message || '未知错误'));
+                message.error(t('chapters.messages.operationFailedDetail', { error: err.message || t('chapters.messages.unknownError') }));
                 throw error;
               }
             }
@@ -1586,7 +1588,7 @@ export default function Chapters() {
             project_id: currentProject.id,
             ...values
           });
-          message.success('章节创建成功');
+          message.success(t('chapters.messages.createSuccess'));
           await refreshChapters();
 
           // 刷新项目信息以更新字数统计
@@ -1596,7 +1598,7 @@ export default function Chapters() {
           manualCreateForm.resetFields();
         } catch (error: unknown) {
           const err = error as Error;
-          message.error('创建失败：' + (err.message || '未知错误'));
+          message.error(t('chapters.messages.createFailed', { error: err.message || t('chapters.messages.unknownError') }));
           throw error;
         }
       }
@@ -1615,7 +1617,7 @@ export default function Chapters() {
       case 'pending':
         return (
           <Tag icon={<SyncOutlined spin />} color="processing">
-            等待分析
+            {t('chapters.analyzeStatus.waiting')}
           </Tag>
         );
       case 'running': {
@@ -1627,20 +1629,20 @@ export default function Chapters() {
             color={isRetrying ? "warning" : "processing"}
             title={task.error_message || undefined}
           >
-            {isRetrying ? `重试中 ${task.progress}%` : `分析中 ${task.progress}%`}
+            {isRetrying ? t('chapters.analyzeStatus.retrying', { progress: task.progress }) : t('chapters.analyzeStatus.analyzingProgress', { progress: task.progress })}
           </Tag>
         );
       }
       case 'completed':
         return (
           <Tag icon={<CheckCircleOutlined />} color="success">
-            已分析
+            {t('chapters.analyzeStatus.completed')}
           </Tag>
         );
       case 'failed':
         return (
           <Tag icon={<CloseCircleOutlined />} color="error" title={task.error_message || undefined}>
-            分析失败
+            {t('chapters.analyzeStatus.failed')}
           </Tag>
         );
       default:
@@ -1659,7 +1661,7 @@ export default function Chapters() {
         title: (
           <Space style={{ flexWrap: 'wrap' }}>
             <InfoCircleOutlined style={{ color: token.colorPrimary }} />
-            <span style={{ wordBreak: 'break-word' }}>第{chapter.chapter_number}章展开规划</span>
+            <span style={{ wordBreak: 'break-word' }}>{t('chapters.expansion.title', { num: chapter.chapter_number })}</span>
           </Space>
         ),
         width: isMobile ? 'calc(100vw - 32px)' : 800,
@@ -1692,7 +1694,7 @@ export default function Chapters() {
                 overflowWrap: 'break-word'
               }}
             >
-              <Descriptions.Item label="章节标题">
+              <Descriptions.Item label={t('chapters.expansion.chapterTitle')}>
                 <strong style={{
                   wordBreak: 'break-word',
                   whiteSpace: 'normal',
@@ -1701,7 +1703,7 @@ export default function Chapters() {
                   {chapter.title}
                 </strong>
               </Descriptions.Item>
-              <Descriptions.Item label="情感基调">
+              <Descriptions.Item label={t('chapters.expansion.emotionalTone')}>
                 <Tag
                   color="blue"
                   style={{
@@ -1715,7 +1717,7 @@ export default function Chapters() {
                   {planData.emotional_tone}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="冲突类型">
+              <Descriptions.Item label={t('chapters.expansion.conflictType')}>
                 <Tag
                   color="orange"
                   style={{
@@ -1729,10 +1731,10 @@ export default function Chapters() {
                   {planData.conflict_type}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="预估字数">
-                <Tag color="green">{planData.estimated_words}字</Tag>
+              <Descriptions.Item label={t('chapters.expansion.estimatedWords')}>
+                <Tag color="green">{t('chapters.expansion.wordCount', { num: planData.estimated_words })}</Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="叙事目标">
+              <Descriptions.Item label={t('chapters.expansion.narrativeGoal')}>
                 <span style={{
                   wordBreak: 'break-word',
                   whiteSpace: 'normal',
@@ -1741,7 +1743,7 @@ export default function Chapters() {
                   {planData.narrative_goal}
                 </span>
               </Descriptions.Item>
-              <Descriptions.Item label="关键事件">
+              <Descriptions.Item label={t('chapters.expansion.keyEvents')}>
                 <Space direction="vertical" size="small" style={{ width: '100%' }}>
                   {planData.key_events.map((event, idx) => (
                     <div
@@ -1765,7 +1767,7 @@ export default function Chapters() {
                   ))}
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="涉及角色">
+              <Descriptions.Item label={t('chapters.expansion.characters')}>
                 <Space wrap style={{ maxWidth: '100%' }}>
                   {planData.character_focus.map((char, idx) => (
                     <Tag
@@ -1784,7 +1786,7 @@ export default function Chapters() {
                 </Space>
               </Descriptions.Item>
               {planData.scenes && planData.scenes.length > 0 && (
-                <Descriptions.Item label="场景规划">
+                <Descriptions.Item label={t('chapters.expansion.scenes')}>
                   <Space direction="vertical" size="small" style={{ width: '100%' }}>
                     {planData.scenes.map((scene, idx) => (
                       <Card
@@ -1802,7 +1804,7 @@ export default function Chapters() {
                           whiteSpace: 'normal',
                           overflowWrap: 'break-word'
                         }}>
-                          <strong>📍 地点：</strong>
+                          <strong>{t('chapters.expansion.location')}</strong>
                           <span style={{
                             wordBreak: 'break-word',
                             whiteSpace: 'normal',
@@ -1812,7 +1814,7 @@ export default function Chapters() {
                           </span>
                         </div>
                         <div style={{ marginBottom: 4 }}>
-                          <strong>👥 角色：</strong>
+                          <strong>{t('chapters.expansion.sceneCharacters')}</strong>
                           <Space
                             size="small"
                             wrap
@@ -1841,7 +1843,7 @@ export default function Chapters() {
                           whiteSpace: 'normal',
                           overflowWrap: 'break-word'
                         }}>
-                          <strong>🎯 目的：</strong>
+                          <strong>{t('chapters.expansion.purpose')}</strong>
                           <span style={{
                             wordBreak: 'break-word',
                             whiteSpace: 'normal',
@@ -1857,19 +1859,19 @@ export default function Chapters() {
               )}
             </Descriptions>
             <Alert
-              message="提示"
-              description="这些是AI在大纲展开时生成的规划信息，可以作为创作章节内容时的参考。"
+              message={t('chapters.expansion.tipMessage')}
+              description={t('chapters.expansion.tipDescription')}
               type="info"
               showIcon
               style={{ marginTop: 16 }}
             />
           </div>
         ),
-        okText: '关闭',
+        okText: t('common.close'),
       });
     } catch (error) {
       console.error('解析展开规划失败:', error);
-      message.error('展开规划数据格式错误');
+      message.error(t('chapters.messages.expansionFormatError'));
     }
   };
 
@@ -1887,10 +1889,10 @@ export default function Chapters() {
         setCurrentProject(updatedProject);
       }
 
-      message.success('章节删除成功');
+      message.success(t('chapters.messages.deleteSuccess'));
     } catch (error: unknown) {
       const err = error as Error;
-      message.error('删除章节失败：' + (err.message || '未知错误'));
+      message.error(t('chapters.messages.deleteFailed', { error: err.message || t('chapters.messages.unknownError') }));
     }
   };
 
@@ -1916,20 +1918,20 @@ export default function Chapters() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || '更新失败');
+        throw new Error(error.detail || t('chapters.messages.updatePlanFailed'));
       }
 
       // 刷新章节列表
       await refreshChapters();
 
-      message.success('规划信息更新成功');
+      message.success(t('chapters.messages.planUpdateSuccess'));
 
       // 关闭编辑器
       setPlanEditorVisible(false);
       setEditingPlanChapter(null);
     } catch (error: unknown) {
       const err = error as Error;
-      message.error('保存规划失败：' + (err.message || '未知错误'));
+      message.error(t('chapters.messages.savePlanFailed', { error: err.message || t('chapters.messages.unknownError') }));
       throw error;
     }
   };
@@ -1944,11 +1946,11 @@ export default function Chapters() {
   const handleReaderChapterChange = async (chapterId: string) => {
     try {
       const response = await fetch(`/api/chapters/${chapterId}`);
-      if (!response.ok) throw new Error('获取章节失败');
+      if (!response.ok) throw new Error(t('chapters.messages.fetchChapterFailed'));
       const newChapter = await response.json();
       setReadingChapter(newChapter);
     } catch {
-      message.error('加载章节失败');
+      message.error(t('chapters.messages.loadChapterFailed'));
     }
   };
 
@@ -1972,7 +1974,7 @@ export default function Chapters() {
     // 关闭弹窗
     setPartialRegenerateModalVisible(false);
     
-    message.success('局部重写已应用');
+    message.success(t('chapters.messages.partialApplied'));
   };
 
   return (
@@ -1995,21 +1997,21 @@ export default function Chapters() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <h2 style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
             <BookOutlined style={{ marginRight: 8 }} />
-            章节管理
+            {t('chapters.page.title')}
           </h2>
           <Tag
             color={currentProject.outline_mode === 'one-to-one' ? 'blue' : 'green'}
             style={{ width: 'fit-content' }}
           >
             {currentProject.outline_mode === 'one-to-one'
-              ? '传统模式：章节由大纲管理，请在大纲页面操作'
-              : '细化模式：章节可在大纲页面展开'}
+              ? t('chapters.page.modeTraditional')
+              : t('chapters.page.modeDetailed')}
           </Tag>
         </div>
         <Space direction={isMobile ? 'vertical' : 'horizontal'} style={{ width: isMobile ? '100%' : 'auto' }}>
           <Input.Search
             allowClear
-            placeholder="搜索章节（序号/标题/大纲）"
+            placeholder={t('chapters.page.searchPlaceholder')}
             value={chapterSearchKeyword}
             onChange={(e) => setChapterSearchKeyword(e.target.value)}
             style={{ width: isMobile ? '100%' : 280 }}
@@ -2021,7 +2023,7 @@ export default function Chapters() {
               block={isMobile}
               size={isMobile ? 'middle' : 'middle'}
             >
-              手动创建
+              {t('chapters.page.manualCreate')}
             </Button>
           )}
           <Button
@@ -2033,9 +2035,9 @@ export default function Chapters() {
             block={isMobile}
             size={isMobile ? 'middle' : 'middle'}
             style={{ background: token.colorWarning, borderColor: token.colorWarning }}
-            title={batchAnalyzableChapterCount === 0 ? '暂无可一键分析章节' : `可一键分析 ${batchAnalyzableChapterCount} 章`}
+            title={batchAnalyzableChapterCount === 0 ? t('chapters.page.noAnalyzableTooltip') : t('chapters.page.analyzableTooltip', { num: batchAnalyzableChapterCount })}
           >
-            一键分析{batchAnalyzableChapterCount > 0 ? ` (${batchAnalyzableChapterCount})` : ''}
+            {t('chapters.page.batchAnalyze')}{batchAnalyzableChapterCount > 0 ? ` (${batchAnalyzableChapterCount})` : ''}
           </Button>
           <Button
             type="primary"
@@ -2047,7 +2049,7 @@ export default function Chapters() {
             size={isMobile ? 'middle' : 'middle'}
             style={batchGenerating ? {} : { background: token.colorInfo, borderColor: token.colorInfo }}
           >
-            {batchGenerating ? '生成中...' : '批量生成'}
+            {batchGenerating ? t('chapters.page.generating') : t('chapters.page.batchGenerate')}
           </Button>
           <Button
             type="default"
@@ -2057,7 +2059,7 @@ export default function Chapters() {
             block={isMobile}
             size={isMobile ? 'middle' : 'middle'}
           >
-            导出为TXT
+            {t('chapters.page.exportTxt')}
           </Button>
         </Space>
       </div>
@@ -2065,9 +2067,9 @@ export default function Chapters() {
 
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {chapters.length === 0 ? (
-          <Empty description="还没有章节，开始创作吧！" />
+          <Empty description={t('chapters.page.emptyNoChapters')} />
         ) : filteredSortedChapters.length === 0 ? (
-          <Empty description="未找到匹配章节" />
+          <Empty description={t('chapters.page.emptyNoMatch')} />
         ) : currentProject.outline_mode === 'one-to-one' ? (
           // one-to-one 模式：直接显示扁平列表
           <List
@@ -2090,16 +2092,16 @@ export default function Chapters() {
                     icon={<ReadOutlined />}
                     onClick={() => handleOpenReader(item)}
                     disabled={!item.content || item.content.trim() === ''}
-                    title={!item.content || item.content.trim() === '' ? '暂无内容' : '沉浸式阅读'}
+                    title={!item.content || item.content.trim() === '' ? t('chapters.page.noContent') : t('chapters.page.immersiveRead')}
                   >
-                    阅读
+                    {t('chapters.page.actionRead')}
                   </Button>,
                   <Button
                     type="text"
                     icon={<EditOutlined />}
                     onClick={() => handleOpenEditor(item.id)}
                   >
-                    编辑
+                    {t('chapters.page.actionEdit')}
                   </Button>,
                   (() => {
                     const task = analysisTasksMap[item.id];
@@ -2114,12 +2116,12 @@ export default function Chapters() {
                         disabled={!hasContent || isAnalyzing}
                         loading={isAnalyzing}
                         title={
-                          !hasContent ? '请先生成章节内容' :
-                            isAnalyzing ? '分析进行中，请稍候...' :
+                          !hasContent ? t('chapters.page.generateFirst') :
+                            isAnalyzing ? t('chapters.page.analyzingWait') :
                               ''
                         }
                       >
-                        {isAnalyzing ? '分析中' : '分析'}
+                        {isAnalyzing ? t('chapters.page.analyzing') : t('chapters.page.actionAnalyze')}
                       </Button>
                     );
                   })(),
@@ -2128,7 +2130,7 @@ export default function Chapters() {
                     icon={<SettingOutlined />}
                     onClick={() => handleOpenModal(item.id)}
                   >
-                    修改
+                    {t('chapters.page.actionModify')}
                   </Button>,
                 ]}
               >
@@ -2144,15 +2146,15 @@ export default function Chapters() {
                         width: '100%'
                       }}>
                         <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 500, flexShrink: 0 }}>
-                          第{item.chapter_number}章：{item.title}
+                          {t('chapters.page.chapterTitle', { num: item.chapter_number, title: item.title })}
                         </span>
                         <Space wrap size={isMobile ? 4 : 8}>
                           <Tag color={getStatusColor(item.status)}>{getStatusText(item.status)}</Tag>
-                          <Badge count={`${item.word_count || 0}字`} style={{ backgroundColor: token.colorSuccess }} />
+                          <Badge count={t('chapters.page.wordsBadge', { num: item.word_count || 0 })} style={{ backgroundColor: token.colorSuccess }} />
                           {renderAnalysisStatus(item.id)}
                           {!canGenerateChapter(item) && (
                             <Tag icon={<LockOutlined />} color="warning" title={getGenerateDisabledReason(item)}>
-                              需前置章节
+                              {t('chapters.page.needPrerequisite')}
                             </Tag>
                           )}
                         </Space>
@@ -2165,7 +2167,7 @@ export default function Chapters() {
                           {item.content.length > (isMobile ? 80 : 150) && '...'}
                         </div>
                       ) : (
-                        <span style={{ color: token.colorTextTertiary, fontSize: isMobile ? 12 : 14 }}>暂无内容</span>
+                        <span style={{ color: token.colorTextTertiary, fontSize: isMobile ? 12 : 14 }}>{t('chapters.page.noContent')}</span>
                       )
                     }
                   />
@@ -2178,14 +2180,14 @@ export default function Chapters() {
                         onClick={() => handleOpenReader(item)}
                         size="small"
                         disabled={!item.content || item.content.trim() === ''}
-                        title={!item.content || item.content.trim() === '' ? '暂无内容' : '阅读'}
+                        title={!item.content || item.content.trim() === '' ? t('chapters.page.noContent') : t('chapters.page.actionRead')}
                       />
                       <Button
                         type="text"
                         icon={<EditOutlined />}
                         onClick={() => handleOpenEditor(item.id)}
                         size="small"
-                        title="编辑"
+                        title={t('chapters.page.actionEdit')}
                       />
                       {(() => {
                         const task = analysisTasksMap[item.id];
@@ -2201,9 +2203,9 @@ export default function Chapters() {
                             disabled={!hasContent || isAnalyzing}
                             loading={isAnalyzing}
                             title={
-                              !hasContent ? '请先生成章节内容' :
-                                isAnalyzing ? '分析中' :
-                                  '分析'
+                              !hasContent ? t('chapters.page.generateFirst') :
+                                isAnalyzing ? t('chapters.page.analyzing') :
+                                  t('chapters.page.actionAnalyze')
                             }
                           />
                         );
@@ -2213,7 +2215,7 @@ export default function Chapters() {
                         icon={<SettingOutlined />}
                         onClick={() => handleOpenModal(item.id)}
                         size="small"
-                        title="修改"
+                        title={t('chapters.page.actionModify')}
                       />
                     </Space>
                   )}
@@ -2236,17 +2238,17 @@ export default function Chapters() {
                 header={
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Tag color={group.outlineId ? 'blue' : 'default'} style={{ margin: 0 }}>
-                      {group.outlineId ? `📖 大纲 ${group.outlineOrder}` : '📝 未分类'}
+                      {group.outlineId ? t('chapters.page.outlineTag', { order: group.outlineOrder }) : t('chapters.page.uncategorizedTag')}
                     </Tag>
                     <span style={{ fontWeight: 600, fontSize: 16 }}>
                       {group.outlineTitle}
                     </span>
                     <Badge
-                      count={`${group.chapters.length} 章`}
+                      count={t('chapters.page.chaptersBadge', { num: group.chapters.length })}
                       style={{ backgroundColor: token.colorSuccess }}
                     />
                     <Badge
-                      count={`${group.chapters.reduce((sum, ch) => sum + (ch.word_count || 0), 0)} 字`}
+                      count={t('chapters.page.wordsBadgeSpaced', { num: group.chapters.reduce((sum, ch) => sum + (ch.word_count || 0), 0) })}
                       style={{ backgroundColor: token.colorPrimary }}
                     />
                   </div>
@@ -2276,16 +2278,16 @@ export default function Chapters() {
                           icon={<ReadOutlined />}
                           onClick={() => handleOpenReader(item)}
                           disabled={!item.content || item.content.trim() === ''}
-                          title={!item.content || item.content.trim() === '' ? '暂无内容' : '沉浸式阅读'}
+                          title={!item.content || item.content.trim() === '' ? t('chapters.page.noContent') : t('chapters.page.immersiveRead')}
                         >
-                          阅读
+                          {t('chapters.page.actionRead')}
                         </Button>,
                         <Button
                           type="text"
                           icon={<EditOutlined />}
                           onClick={() => handleOpenEditor(item.id)}
                         >
-                          编辑
+                          {t('chapters.page.actionEdit')}
                         </Button>,
                         (() => {
                           const task = analysisTasksMap[item.id];
@@ -2300,12 +2302,12 @@ export default function Chapters() {
                               disabled={!hasContent || isAnalyzing}
                               loading={isAnalyzing}
                               title={
-                                !hasContent ? '请先生成章节内容' :
-                                  isAnalyzing ? '分析进行中，请稍候...' :
+                                !hasContent ? t('chapters.page.generateFirst') :
+                                  isAnalyzing ? t('chapters.page.analyzingWait') :
                                     ''
                               }
                             >
-                              {isAnalyzing ? '分析中' : '分析'}
+                              {isAnalyzing ? t('chapters.page.analyzing') : t('chapters.page.actionAnalyze')}
                             </Button>
                           );
                         })(),
@@ -2314,16 +2316,16 @@ export default function Chapters() {
                           icon={<SettingOutlined />}
                           onClick={() => handleOpenModal(item.id)}
                         >
-                          修改
+                          {t('chapters.page.actionModify')}
                         </Button>,
                         // 只在 one-to-many 模式下显示删除按钮
                         ...(currentProject.outline_mode === 'one-to-many' ? [
                           <Popconfirm
-                            title="确定删除这个章节吗？"
-                            description="删除后将无法恢复，章节内容和分析结果都将被删除。"
+                            title={t('chapters.page.deleteConfirmTitle')}
+                            description={t('chapters.page.deleteConfirmDesc')}
                             onConfirm={() => handleDeleteChapter(item.id)}
-                            okText="确定删除"
-                            cancelText="取消"
+                            okText={t('chapters.page.deleteConfirmOk')}
+                            cancelText={t('common.cancel')}
                             okButtonProps={{ danger: true }}
                           >
                             <Button
@@ -2331,7 +2333,7 @@ export default function Chapters() {
                               danger
                               icon={<DeleteOutlined />}
                             >
-                              删除
+                              {t('chapters.page.deleteAction')}
                             </Button>
                           </Popconfirm>
                         ] : []),
@@ -2349,21 +2351,21 @@ export default function Chapters() {
                               width: '100%'
                             }}>
                               <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 500, flexShrink: 0 }}>
-                                第{item.chapter_number}章：{item.title}
+                                {t('chapters.page.chapterTitle', { num: item.chapter_number, title: item.title })}
                               </span>
                               <Space wrap size={isMobile ? 4 : 8}>
                                 <Tag color={getStatusColor(item.status)}>{getStatusText(item.status)}</Tag>
-                                <Badge count={`${item.word_count || 0}字`} style={{ backgroundColor: token.colorSuccess }} />
+                                <Badge count={t('chapters.page.wordsBadge', { num: item.word_count || 0 })} style={{ backgroundColor: token.colorSuccess }} />
                                 {renderAnalysisStatus(item.id)}
                                 {!canGenerateChapter(item) && (
                                   <Tag icon={<LockOutlined />} color="warning" title={getGenerateDisabledReason(item)}>
-                                    需前置章节
+                                    {t('chapters.page.needPrerequisite')}
                                   </Tag>
                                 )}
                                 <Space size={4}>
                                   {item.expansion_plan && (
                                     <InfoCircleOutlined
-                                      title="查看展开详情"
+                                      title={t('chapters.page.viewExpansion')}
                                       style={{ color: token.colorPrimary, cursor: 'pointer', fontSize: 16 }}
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -2372,7 +2374,7 @@ export default function Chapters() {
                                     />
                                   )}
                                   <FormOutlined
-                                    title={item.expansion_plan ? "编辑规划信息" : "创建规划信息"}
+                                    title={item.expansion_plan ? t('chapters.page.editPlan') : t('chapters.page.createPlan')}
                                     style={{ color: token.colorSuccess, cursor: 'pointer', fontSize: 16 }}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -2390,7 +2392,7 @@ export default function Chapters() {
                                 {item.content.length > (isMobile ? 80 : 150) && '...'}
                               </div>
                             ) : (
-                              <span style={{ color: token.colorTextTertiary, fontSize: isMobile ? 12 : 14 }}>暂无内容</span>
+                              <span style={{ color: token.colorTextTertiary, fontSize: isMobile ? 12 : 14 }}>{t('chapters.page.noContent')}</span>
                             )
                           }
                         />
@@ -2403,14 +2405,14 @@ export default function Chapters() {
                               onClick={() => handleOpenReader(item)}
                               size="small"
                               disabled={!item.content || item.content.trim() === ''}
-                              title={!item.content || item.content.trim() === '' ? '暂无内容' : '阅读'}
+                              title={!item.content || item.content.trim() === '' ? t('chapters.page.noContent') : t('chapters.page.actionRead')}
                             />
                             <Button
                               type="text"
                               icon={<EditOutlined />}
                               onClick={() => handleOpenEditor(item.id)}
                               size="small"
-                              title="编辑"
+                              title={t('chapters.page.actionEdit')}
                             />
                             {(() => {
                               const task = analysisTasksMap[item.id];
@@ -2426,9 +2428,9 @@ export default function Chapters() {
                                   disabled={!hasContent || isAnalyzing}
                                   loading={isAnalyzing}
                                   title={
-                                    !hasContent ? '请先生成章节内容' :
-                                      isAnalyzing ? '分析中' :
-                                        '分析'
+                                    !hasContent ? t('chapters.page.generateFirst') :
+                                      isAnalyzing ? t('chapters.page.analyzing') :
+                                        t('chapters.page.actionAnalyze')
                                   }
                                 />
                               );
@@ -2438,16 +2440,16 @@ export default function Chapters() {
                               icon={<SettingOutlined />}
                               onClick={() => handleOpenModal(item.id)}
                               size="small"
-                              title="修改"
+                              title={t('chapters.page.actionModify')}
                             />
                             {/* 只在 one-to-many 模式下显示删除按钮 */}
                             {currentProject.outline_mode === 'one-to-many' && (
                               <Popconfirm
-                                title="确定删除？"
-                                description="删除后无法恢复"
+                                title={t('chapters.page.deleteShortTitle')}
+                                description={t('chapters.page.deleteShortDesc')}
                                 onConfirm={() => handleDeleteChapter(item.id)}
-                                okText="删除"
-                                cancelText="取消"
+                                okText={t('chapters.page.deleteAction')}
+                                cancelText={t('common.cancel')}
                                 okButtonProps={{ danger: true }}
                               >
                                 <Button
@@ -2455,7 +2457,7 @@ export default function Chapters() {
                                   danger
                                   icon={<DeleteOutlined />}
                                   size="small"
-                                  title="删除章节"
+                                  title={t('chapters.page.deleteChapterTitle')}
                                 />
                               </Popconfirm>
                             )}
@@ -2486,14 +2488,14 @@ export default function Chapters() {
                 setChapterPage(1);
               }
             }}
-            showTotal={(total) => `共 ${total} 条`}
+            showTotal={(total) => t('chapters.page.totalCount', { num: total })}
             size={isMobile ? 'small' : 'default'}
           />
         </div>
       )}
 
       <Modal
-        title={editingId ? '编辑章节信息' : '添加章节'}
+        title={editingId ? t('chapters.editModal.editTitle') : t('chapters.editModal.addTitle')}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
@@ -2513,47 +2515,47 @@ export default function Chapters() {
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            label="章节标题"
+            label={t('chapters.editModal.titleLabel')}
             name="title"
             tooltip={
               currentProject.outline_mode === 'one-to-one'
-                ? "章节标题由大纲管理，请在大纲页面修改"
-                : "一对多模式下可以修改章节标题"
+                ? t('chapters.editModal.titleTooltipTraditional')
+                : t('chapters.editModal.titleTooltipDetailed')
             }
             rules={
               currentProject.outline_mode === 'one-to-many'
-                ? [{ required: true, message: '请输入章节标题' }]
+                ? [{ required: true, message: t('chapters.editModal.titleRequired') }]
                 : undefined
             }
           >
             <Input
-              placeholder="输入章节标题"
+              placeholder={t('chapters.editModal.titlePlaceholder')}
               disabled={currentProject.outline_mode === 'one-to-one'}
             />
           </Form.Item>
 
           <Form.Item
-            label="章节序号"
+            label={t('chapters.editModal.chapterNumberLabel')}
             name="chapter_number"
-            tooltip="章节序号不允许修改，请删除对应大纲，重新生成"
+            tooltip={t('chapters.editModal.chapterNumberTooltip')}
           >
-            <Input type="number" placeholder="章节排序序号" disabled />
+            <Input type="number" placeholder={t('chapters.editModal.chapterNumberPlaceholder')} disabled />
           </Form.Item>
 
-          <Form.Item label="状态" name="status">
-            <Select placeholder="选择状态">
-              <Select.Option value="draft">草稿</Select.Option>
-              <Select.Option value="pending">待处理</Select.Option>
-              <Select.Option value="writing">创作中</Select.Option>
-              <Select.Option value="completed">已完成</Select.Option>
+          <Form.Item label={t('chapters.editModal.statusLabel')} name="status">
+            <Select placeholder={t('chapters.editModal.statusPlaceholder')}>
+              <Select.Option value="draft">{t('chapters.status.draft')}</Select.Option>
+              <Select.Option value="pending">{t('chapters.status.pending')}</Select.Option>
+              <Select.Option value="writing">{t('chapters.status.writing')}</Select.Option>
+              <Select.Option value="completed">{t('chapters.status.completed')}</Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item>
             <Space style={{ float: 'right' }}>
-              <Button onClick={() => setIsModalOpen(false)}>取消</Button>
+              <Button onClick={() => setIsModalOpen(false)}>{t('common.cancel')}</Button>
               <Button type="primary" htmlType="submit">
-                更新
+                {t('chapters.editModal.update')}
               </Button>
             </Space>
           </Form.Item>
@@ -2561,11 +2563,11 @@ export default function Chapters() {
       </Modal>
 
       <Modal
-        title="编辑章节内容"
+        title={t('chapters.editor.title')}
         open={isEditorOpen}
         onCancel={() => {
           if (isGenerating) {
-            message.warning('AI正在创作中，请等待完成后再关闭');
+            message.warning(t('chapters.messages.aiGeneratingWaitClose'));
             return;
           }
           setIsEditorOpen(false);
@@ -2592,8 +2594,8 @@ export default function Chapters() {
         <Form form={editorForm} layout="vertical" onFinish={handleEditorSubmit}>
           {/* 章节标题和AI创作按钮 */}
           <Form.Item
-            label="章节标题"
-            tooltip="（1-1模式请在大纲修改，1-N模式请使用修改按钮编辑）"
+            label={t('chapters.editor.chapterTitleLabel')}
+            tooltip={t('chapters.editor.chapterTitleTooltip')}
             style={{ marginBottom: isMobile ? 16 : 12 }}
           >
             <Space.Compact style={{ width: '100%' }}>
@@ -2615,18 +2617,18 @@ export default function Chapters() {
                     disabled={!canGenerate}
                     danger={!canGenerate}
                     style={{ fontWeight: 'bold' }}
-                    title={!canGenerate ? disabledReason : '根据大纲和前置章节内容创作（流式）'}
+                    title={!canGenerate ? disabledReason : t('chapters.editor.aiCreateTooltip')}
                   >
-                    {isMobile ? 'AI' : 'AI创作'}
+                    {isMobile ? t('chapters.editor.aiCreateShort') : t('chapters.editor.aiCreate')}
                   </Button>
                   <Button
                     icon={<RocketOutlined />}
                     onClick={handleBackgroundGenerate}
                     disabled={!canGenerate || isContinuing}
                     style={{ fontWeight: 'bold' }}
-                    title={!canGenerate ? disabledReason : '后台生成：关闭浏览器也不影响，完成后自动保存'}
+                    title={!canGenerate ? disabledReason : t('chapters.editor.backgroundTooltip')}
                   >
-                    {isMobile ? '后台' : '后台生成'}
+                    {isMobile ? t('chapters.editor.backgroundShort') : t('chapters.editor.background')}
                   </Button>
                   </>
                 );
@@ -2642,13 +2644,13 @@ export default function Chapters() {
             marginBottom: isMobile ? 0 : 12
           }}>
             <Form.Item
-              label="写作风格"
-              tooltip="选择AI创作时使用的写作风格"
+              label={t('chapters.editor.writingStyleLabel')}
+              tooltip={t('chapters.editor.writingStyleTooltip')}
               required
               style={{ flex: 1, marginBottom: isMobile ? 16 : 0 }}
             >
               <Select
-                placeholder="请选择写作风格"
+                placeholder={t('chapters.editor.writingStylePlaceholder')}
                 value={selectedStyleId}
                 onChange={setSelectedStyleId}
                 disabled={isGenerating}
@@ -2656,30 +2658,30 @@ export default function Chapters() {
               >
                 {writingStyles.map(style => (
                   <Select.Option key={style.id} value={style.id}>
-                    {style.name}{style.is_default && ' (默认)'}
+                    {style.name}{style.is_default && t('chapters.editor.defaultSuffix')}
                   </Select.Option>
                 ))}
               </Select>
               {!selectedStyleId && (
-                <div style={{ color: token.colorError, fontSize: 12, marginTop: 4 }}>请选择写作风格</div>
+                <div style={{ color: token.colorError, fontSize: 12, marginTop: 4 }}>{t('chapters.editor.writingStyleRequired')}</div>
               )}
             </Form.Item>
 
             <Form.Item
-              label="叙事角度"
-              tooltip="第一人称(我)代入感强；第三人称(他/她)更客观；全知视角洞悉一切"
+              label={t('chapters.editor.narrativeLabel')}
+              tooltip={t('chapters.editor.narrativeTooltip')}
               style={{ flex: 1, marginBottom: isMobile ? 16 : 0 }}
             >
               <Select
-                placeholder={`项目默认: ${getNarrativePerspectiveText(currentProject?.narrative_perspective)}`}
+                placeholder={t('chapters.editor.narrativeDefaultPlaceholder', { value: getNarrativePerspectiveText(currentProject?.narrative_perspective) })}
                 value={temporaryNarrativePerspective}
                 onChange={setTemporaryNarrativePerspective}
                 allowClear
                 disabled={isGenerating}
               >
-                <Select.Option value="第一人称">第一人称(我)</Select.Option>
-                <Select.Option value="第三人称">第三人称(他/她)</Select.Option>
-                <Select.Option value="全知视角">全知视角</Select.Option>
+                <Select.Option value="第一人称">{t('chapters.narrative.firstPersonOption')}</Select.Option>
+                <Select.Option value="第三人称">{t('chapters.narrative.thirdPersonOption')}</Select.Option>
+                <Select.Option value="全知视角">{t('chapters.narrative.omniscientOption')}</Select.Option>
               </Select>
               {temporaryNarrativePerspective && (
                 <div style={{ color: token.colorSuccess, fontSize: 12, marginTop: 4 }}>
@@ -2696,12 +2698,12 @@ export default function Chapters() {
             marginBottom: isMobile ? 16 : 12
           }}>
             <Form.Item
-              label="应用 Skill"
-              tooltip="选择一个 Skill 工作流指导 AI 创作，不选则使用标准创作流程"
+              label={t('chapters.editor.skillLabel')}
+              tooltip={t('chapters.editor.skillTooltip')}
               style={{ flex: 1, marginBottom: isMobile ? 16 : 0 }}
             >
               <Select
-                placeholder="不使用 Skill（标准创作）"
+                placeholder={t('chapters.editor.skillPlaceholder')}
                 value={selectedSkillKey}
                 onChange={setSelectedSkillKey}
                 allowClear
@@ -2729,8 +2731,8 @@ export default function Chapters() {
             </Form.Item>
 
             <Form.Item
-              label="目标字数"
-              tooltip="AI生成章节时的目标字数，实际可能略有偏差（修改后会自动记住）"
+              label={t('chapters.editor.targetWordCountLabel')}
+              tooltip={t('chapters.editor.targetWordCountTooltip')}
               style={{ flex: 1, marginBottom: isMobile ? 16 : 0 }}
             >
               <InputNumber
@@ -2745,18 +2747,18 @@ export default function Chapters() {
                 }}
                 disabled={isGenerating}
                 style={{ width: '100%' }}
-                formatter={(value) => `${value} 字`}
-                parser={(value) => parseInt(value?.replace(' 字', '') || '0', 10) as unknown as 500}
+                formatter={(value) => `${value} ${t('chapters.page.wordUnit')}`}
+                parser={(value) => parseInt(value?.replace(` ${t('chapters.page.wordUnit')}`, '') || '0', 10) as unknown as 500}
               />
             </Form.Item>
 
             <Form.Item
-              label="AI模型"
-              tooltip="选择用于生成章节内容的AI模型，不选择则使用默认模型"
+              label={t('chapters.editor.modelLabel')}
+              tooltip={t('chapters.editor.modelTooltip')}
               style={{ flex: 1, marginBottom: isMobile ? 16 : 0 }}
             >
               <Select
-                placeholder={selectedModel ? `默认: ${availableModels.find(m => m.value === selectedModel)?.label || selectedModel}` : "使用默认模型"}
+                placeholder={selectedModel ? t('chapters.editor.modelDefaultPlaceholder', { value: availableModels.find(m => m.value === selectedModel)?.label || selectedModel }) : t('chapters.editor.modelUseDefault')}
                 value={selectedModel}
                 onChange={setSelectedModel}
                 allowClear
@@ -2773,11 +2775,11 @@ export default function Chapters() {
             </Form.Item>
           </div>
 
-          <Form.Item label="章节内容" name="content">
+          <Form.Item label={t('chapters.editor.contentLabel')} name="content">
             <TextArea
               ref={contentTextAreaRef}
               rows={isMobile ? 12 : 20}
-              placeholder="开始写作..."
+              placeholder={t('chapters.editor.contentPlaceholder')}
               style={{ fontFamily: 'monospace', fontSize: isMobile ? 12 : 14 }}
               disabled={isGenerating}
             />
@@ -2799,7 +2801,7 @@ export default function Chapters() {
                 <Button
                   onClick={() => {
                     if (isGenerating) {
-                      message.warning('AI正在创作中，请等待完成后再关闭');
+                      message.warning(t('chapters.messages.aiGeneratingWaitClose'));
                       return;
                     }
                     setIsEditorOpen(false);
@@ -2807,7 +2809,7 @@ export default function Chapters() {
                   block={isMobile}
                   disabled={isGenerating}
                 >
-                  取消
+                  {t('chapters.editor.cancel')}
                 </Button>
                 <Button
                   type="primary"
@@ -2815,7 +2817,7 @@ export default function Chapters() {
                   block={isMobile}
                   disabled={isGenerating}
                 >
-                  保存章节
+                  {t('chapters.editor.saveChapter')}
                 </Button>
               </Space>
             </Space>
@@ -2859,17 +2861,17 @@ export default function Chapters() {
         title={
           <Space>
             <RocketOutlined style={{ color: token.colorInfo }} />
-            <span>批量生成章节内容</span>
+            <span>{t('chapters.batch.title')}</span>
           </Space>
         }
         open={batchGenerateVisible}
         onCancel={() => {
           if (batchGenerating) {
             modal.confirm({
-              title: '确认取消',
-              content: '批量生成正在进行中，确定要取消吗？',
-              okText: '确定取消',
-              cancelText: '继续生成',
+              title: t('chapters.batch.cancelConfirmTitle'),
+              content: t('chapters.batch.cancelConfirmContent'),
+              okText: t('chapters.batch.cancelConfirmOk'),
+              cancelText: t('chapters.batch.cancelConfirmCancel'),
               centered: true,
               onOk: () => {
                 handleCancelBatchGenerate();
@@ -2883,10 +2885,10 @@ export default function Chapters() {
         footer={!batchGenerating ? (
           <Space style={{ width: '100%', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <Button onClick={() => setBatchGenerateVisible(false)}>
-              取消
+              {t('chapters.batch.cancelBtn')}
             </Button>
             <Button type="primary" icon={<RocketOutlined />} onClick={() => batchForm.submit()}>
-              开始批量生成
+              {t('chapters.batch.startBtn')}
             </Button>
           </Space>
         ) : null}
@@ -2922,7 +2924,7 @@ export default function Chapters() {
             }}
           >
             <Alert
-              message="批量生成说明：严格按序生成 | 统一风格字数 | 任一失败则终止"
+              message={t('chapters.batch.infoMessage')}
               type="info"
               showIcon
               style={{ marginBottom: 16 }}
@@ -2931,34 +2933,34 @@ export default function Chapters() {
             {/* 第一行：起始章节 + 生成数量 */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 0 : 16 }}>
               <Form.Item
-                label="起始章节"
+                label={t('chapters.batch.startChapterLabel')}
                 name="startChapterNumber"
-                rules={[{ required: true, message: '请选择' }]}
+                rules={[{ required: true, message: t('chapters.batch.startChapterRequired') }]}
                 style={{ flex: 1, marginBottom: 12 }}
               >
-                <Select placeholder="选择起始章节">
+                <Select placeholder={t('chapters.batch.startChapterPlaceholder')}>
                   {sortedChapters
                     .filter(ch => !ch.content || ch.content.trim() === '')
                     .filter(ch => canGenerateChapter(ch))
                     .map(ch => (
                       <Select.Option key={ch.id} value={ch.chapter_number}>
-                        第{ch.chapter_number}章：{ch.title}
+                        {t('chapters.batch.chapterOption', { num: ch.chapter_number, title: ch.title })}
                       </Select.Option>
                     ))}
                 </Select>
               </Form.Item>
 
               <Form.Item
-                label="生成数量"
+                label={t('chapters.batch.countLabel')}
                 name="count"
-                rules={[{ required: true, message: '请选择' }]}
+                rules={[{ required: true, message: t('chapters.batch.countRequired') }]}
                 style={{ marginBottom: 12 }}
               >
                 <Radio.Group buttonStyle="solid" size={isMobile ? 'small' : 'middle'}>
-                  <Radio.Button value={5}>5章</Radio.Button>
-                  <Radio.Button value={10}>10章</Radio.Button>
-                  <Radio.Button value={15}>15章</Radio.Button>
-                  <Radio.Button value={20}>20章</Radio.Button>
+                  <Radio.Button value={5}>{t('chapters.batch.count5')}</Radio.Button>
+                  <Radio.Button value={10}>{t('chapters.batch.count10')}</Radio.Button>
+                  <Radio.Button value={15}>{t('chapters.batch.count15')}</Radio.Button>
+                  <Radio.Button value={20}>{t('chapters.batch.count20')}</Radio.Button>
                 </Radio.Group>
               </Form.Item>
             </div>
@@ -2966,25 +2968,25 @@ export default function Chapters() {
             {/* 第二行：写作风格 + 目标字数 */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 0 : 16 }}>
               <Form.Item
-                label="写作风格"
+                label={t('chapters.batch.styleLabel')}
                 name="styleId"
-                rules={[{ required: true, message: '请选择' }]}
+                rules={[{ required: true, message: t('chapters.batch.styleRequired') }]}
                 style={{ flex: 1, marginBottom: 12 }}
               >
-                <Select placeholder="请选择写作风格" showSearch optionFilterProp="children">
+                <Select placeholder={t('chapters.batch.stylePlaceholder')} showSearch optionFilterProp="children">
                   {writingStyles.map(style => (
                     <Select.Option key={style.id} value={style.id}>
-                      {style.name}{style.is_default && ' (默认)'}
+                      {style.name}{style.is_default && t('chapters.batch.defaultSuffix')}
                     </Select.Option>
                   ))}
                 </Select>
               </Form.Item>
 
               <Form.Item
-                label="目标字数"
+                label={t('chapters.batch.wordCountLabel')}
                 name="targetWordCount"
-                rules={[{ required: true, message: '请设置' }]}
-                tooltip="修改后自动记住"
+                rules={[{ required: true, message: t('chapters.batch.wordCountRequired') }]}
+                tooltip={t('chapters.batch.wordCountTooltip')}
                 style={{ flex: 1, marginBottom: 12 }}
               >
                 <InputNumber
@@ -2992,8 +2994,8 @@ export default function Chapters() {
                   max={10000}
                   step={100}
                   style={{ width: '100%' }}
-                  formatter={(value) => `${value} 字`}
-                  parser={(value) => parseInt(value?.replace(' 字', '') || '0', 10) as unknown as 500}
+                  formatter={(value) => `${value} ${t('chapters.page.wordUnit')}`}
+                  parser={(value) => parseInt(value?.replace(` ${t('chapters.page.wordUnit')}`, '') || '0', 10) as unknown as 500}
                   onChange={(value) => {
                     if (value) {
                       setCachedWordCount(value);
@@ -3006,12 +3008,12 @@ export default function Chapters() {
             {/* 第三行：AI模型 + Skill */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 0 : 16 }}>
               <Form.Item
-                label="AI模型"
-                tooltip="不选则使用默认模型"
+                label={t('chapters.batch.modelLabel')}
+                tooltip={t('chapters.batch.modelTooltip')}
                 style={{ flex: 1, marginBottom: 12 }}
               >
                 <Select
-                  placeholder={batchSelectedModel ? `默认: ${availableModels.find(m => m.value === batchSelectedModel)?.label || batchSelectedModel}` : "使用默认模型"}
+                  placeholder={batchSelectedModel ? t('chapters.batch.modelDefaultPlaceholder', { value: availableModels.find(m => m.value === batchSelectedModel)?.label || batchSelectedModel }) : t('chapters.batch.modelUseDefault')}
                   value={batchSelectedModel}
                   onChange={setBatchSelectedModel}
                   allowClear
@@ -3027,12 +3029,12 @@ export default function Chapters() {
               </Form.Item>
 
               <Form.Item
-                label="应用 Skill"
-                tooltip="选择一个 Skill 工作流指导批量创作，不选则使用标准创作流程"
+                label={t('chapters.batch.skillLabel')}
+                tooltip={t('chapters.batch.skillTooltip')}
                 style={{ flex: 1, marginBottom: 12 }}
               >
                 <Select
-                  placeholder="不使用 Skill（标准创作）"
+                  placeholder={t('chapters.batch.skillPlaceholder')}
                   value={batchSelectedSkillKey}
                   onChange={setBatchSelectedSkillKey}
                   allowClear
@@ -3053,14 +3055,14 @@ export default function Chapters() {
 
             {/* 同步分析（固定开启） */}
             <Form.Item
-              label="同步分析"
+              label={t('chapters.batch.syncAnalyzeLabel')}
               name="enableAnalysis"
-              tooltip="必须开启，确保剧情连贯"
+              tooltip={t('chapters.batch.syncAnalyzeTooltip')}
               style={{ marginBottom: 12 }}
             >
               <Radio.Group disabled>
                 <Radio value={true}>
-                  <span style={{ fontSize: 12, color: token.colorSuccess }}>✓ 自动更新角色状态</span>
+                  <span style={{ fontSize: 12, color: token.colorSuccess }}>{t('chapters.batch.syncAutoUpdate')}</span>
                 </Radio>
               </Radio.Group>
             </Form.Item>
@@ -3068,14 +3070,14 @@ export default function Chapters() {
         ) : (
           <div>
             <Alert
-              message="温馨提示"
+              message={t('chapters.batch.progressTitle')}
               description={
                 <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
-                  <li>批量生成需要一定时间，可以切换到其他页面</li>
-                  <li>关闭页面后重新打开，会自动恢复任务进度</li>
-                  <li>可以随时点击"取消任务"按钮中止生成</li>
+                  <li>{t('chapters.batch.progressLi1')}</li>
+                  <li>{t('chapters.batch.progressLi2')}</li>
+                  <li>{t('chapters.batch.progressLi3')}</li>
                   {batchProgress?.estimated_time_minutes && batchProgress.completed === 0 && (
-                    <li>⏱️ 预计耗时：约 {batchProgress.estimated_time_minutes} 分钟</li>
+                    <li>{t('chapters.batch.progressEstimate', { minutes: batchProgress.estimated_time_minutes })}</li>
                   )}
                 </ul>
               }
@@ -3090,16 +3092,16 @@ export default function Chapters() {
                 icon={<StopOutlined />}
                 onClick={() => {
                   modal.confirm({
-                    title: '确认取消',
-                    content: '确定要取消批量生成吗？已生成的章节将保留。',
-                    okText: '确定取消',
-                    cancelText: '继续生成',
+                    title: t('chapters.batch.cancelTaskConfirmTitle'),
+                    content: t('chapters.batch.cancelTaskConfirmContent'),
+                    okText: t('chapters.batch.cancelTaskConfirmOk'),
+                    cancelText: t('chapters.batch.cancelTaskConfirmCancel'),
                     okButtonProps: { danger: true },
                     onOk: handleCancelBatchGenerate,
                   });
                 }}
               >
-                取消任务
+                {t('sse.cancelTask')}
               </Button>
             </div>
           </div>

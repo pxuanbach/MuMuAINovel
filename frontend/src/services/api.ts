@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { message } from 'antd';
+import i18n from '../i18n';
 import { ssePost } from '../utils/sseClient';
 import type { SSEClientOptions } from '../utils/sseClient';
 import type {
@@ -102,7 +103,7 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    let errorMessage = '请求失败';
+    let errorMessage = i18n.t('api.requestFailed');
 
     if (error.response) {
       const status = error.response.status;
@@ -110,7 +111,7 @@ api.interceptors.response.use(
 
       switch (status) {
         case 400:
-          errorMessage = data?.detail || '请求参数错误';
+          errorMessage = data?.detail || i18n.t('api.badRequest');
           break;
         case 401: {
           const backendDetail = data?.detail || data?.message;
@@ -122,7 +123,7 @@ api.interceptors.response.use(
           ];
           const isUnauthenticated = unauthenticatedDetails.includes(backendDetail);
 
-          errorMessage = backendDetail || '登录状态已失效，请重新登录';
+          errorMessage = backendDetail || i18n.t('api.sessionExpired');
 
           if (isUnauthenticated && window.location.pathname !== '/login') {
             window.location.href = '/login';
@@ -130,30 +131,30 @@ api.interceptors.response.use(
           break;
         }
         case 403:
-          errorMessage = data?.detail || '没有权限访问';
+          errorMessage = data?.detail || i18n.t('api.forbidden');
           break;
         case 404:
-          errorMessage = data?.detail || '请求的资源不存在';
+          errorMessage = data?.detail || i18n.t('api.notFound');
           break;
         case 422:
-          errorMessage = data?.detail || '请求参数验证失败';
+          errorMessage = data?.detail || i18n.t('api.validationFailed');
           if (data?.errors) {
             console.error('验证错误详情:', data.errors);
           }
           break;
         case 500:
-          errorMessage = data?.detail || '服务器内部错误';
+          errorMessage = data?.detail || i18n.t('api.serverError');
           break;
         case 503:
-          errorMessage = '服务暂时不可用，请稍后重试';
+          errorMessage = i18n.t('api.serviceUnavailable');
           break;
         default:
-          errorMessage = data?.detail || data?.message || `请求失败 (${status})`;
+          errorMessage = data?.detail || data?.message || i18n.t('api.requestFailedStatus', { status });
       }
     } else if (error.request) {
-      errorMessage = '网络错误，请检查网络连接';
+      errorMessage = i18n.t('api.networkError');
     } else {
-      errorMessage = error.message || '请求失败';
+      errorMessage = error.message || i18n.t('api.requestFailed');
     }
 
     message.error(errorMessage);

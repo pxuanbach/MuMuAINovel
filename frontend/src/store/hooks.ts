@@ -5,6 +5,7 @@
 
 import { useCallback } from 'react';
 import { message } from 'antd';
+import i18n from '../i18n';
 import { useStore } from './index';
 import { projectApi, outlineApi, characterApi, chapterApi } from '../services/api';
 import type {
@@ -39,7 +40,7 @@ export function useProjectSync() {
       return projects;
     } catch (error) {
       console.error('刷新项目列表失败:', error);
-      message.error('刷新项目列表失败');
+      message.error(i18n.t('store.refreshProjectsFailed'));
       return [];
     } finally {
       setLoading(false);
@@ -107,7 +108,7 @@ export function useCharacterSync() {
       return characters;
     } catch (error) {
       console.error('刷新角色列表失败:', error);
-      message.error('刷新角色列表失败');
+      message.error(i18n.t('store.refreshCharactersFailed'));
       return [];
     }
   }, [currentProject?.id, setCharacters]);
@@ -160,7 +161,7 @@ export function useOutlineSync() {
       return outlines;
     } catch (error) {
       console.error('刷新大纲列表失败:', error);
-      message.error('刷新大纲列表失败');
+      message.error(i18n.t('store.refreshOutlinesFailed'));
       return [];
     }
   }, [currentProject?.id, setOutlines]); // 添加 currentProject?.id 到依赖数组
@@ -240,7 +241,7 @@ export function useChapterSync() {
       return chapters;
     } catch (error) {
       console.error('刷新章节列表失败:', error);
-      message.error('刷新章节列表失败');
+      message.error(i18n.t('store.refreshChaptersFailed'));
       return [];
     }
   }, [currentProject?.id, setChapters]); // 添加 currentProject?.id 到依赖数组

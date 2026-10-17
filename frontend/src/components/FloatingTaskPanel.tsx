@@ -11,6 +11,7 @@ import {
   DownOutlined,
   ClearOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { getProjectTasks, getTaskStatus, cancelTask, cancelBatchTask, deleteTask, clearProjectTasks, type TaskStatus } from '../services/backgroundTaskService';
 import { eventBus, EventNames } from '../store/eventBus';
 
@@ -37,6 +38,7 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
   const watchedTaskIdsRef = useRef<Set<string>>(new Set());
   const loadRequestIdRef = useRef(0);
   const { token } = theme.useToken();
+  const { t } = useTranslation();
 
   // 加载任务列表
   const loadTasks = useCallback(async () => {
@@ -122,7 +124,7 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
   // 有活跃任务时自动展开（仅当用户没有手动收起时）
   useEffect(() => {
     const hasActiveTasks = taskList.some(
-      (t) => t.status === 'running' || t.status === 'pending'
+      (task) => task.status === 'running' || task.status === 'pending'
     );
     if (hasActiveTasks && !userCollapsedRef.current) {
       setCollapsed(false);
@@ -132,7 +134,7 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
   // 活跃任务高频刷新；空闲时保留低频刷新，以发现跨标签页或外部创建的任务。
   useEffect(() => {
     const hasActiveTasks = taskList.some(
-      (t) => t.status === 'running' || t.status === 'pending'
+      (task) => task.status === 'running' || task.status === 'pending'
     );
     
     const interval = hasActiveTasks ? autoRefreshInterval : Math.max(autoRefreshInterval * 5, 15000);
@@ -180,11 +182,11 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
   const handleClearTasks = async () => {
     try {
       const result = await clearProjectTasks(projectId);
-      message.success(`已清理 ${result.deleted_count} 条任务记录`);
+      message.success(t('agent.tasks.clearSuccess', { count: result.deleted_count }));
       loadTasks();
     } catch (error) {
       console.error('清理任务记录失败:', error);
-      message.error('清理任务记录失败');
+      message.error(t('agent.tasks.clearFailed'));
     }
   };
 
@@ -192,15 +194,15 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
   const getTaskStatusTag = (status: TaskStatus['status']) => {
     switch (status) {
       case 'pending':
-        return <Tag icon={<ClockCircleOutlined />} color="default">等待中</Tag>;
+        return <Tag icon={<ClockCircleOutlined />} color="default">{t('agent.tasks.status.pending')}</Tag>;
       case 'running':
-        return <Tag icon={<LoadingOutlined />} color="processing">运行中</Tag>;
+        return <Tag icon={<LoadingOutlined />} color="processing">{t('agent.tasks.status.running')}</Tag>;
       case 'completed':
-        return <Tag icon={<CheckCircleOutlined />} color="success">已完成</Tag>;
+        return <Tag icon={<CheckCircleOutlined />} color="success">{t('agent.tasks.status.completed')}</Tag>;
       case 'failed':
-        return <Tag icon={<CloseCircleOutlined />} color="error">失败</Tag>;
+        return <Tag icon={<CloseCircleOutlined />} color="error">{t('agent.tasks.status.failed')}</Tag>;
       case 'cancelled':
-        return <Tag icon={<CloseCircleOutlined />} color="default">已取消</Tag>;
+        return <Tag icon={<CloseCircleOutlined />} color="default">{t('agent.tasks.status.cancelled')}</Tag>;
       default:
         return <Tag>{status}</Tag>;
     }
@@ -208,39 +210,25 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
 
   // 获取任务类型标签
   const getTaskTypeLabel = (taskType: string) => {
-    switch (taskType) {
-      case 'outline_new':
-        return '大纲生成';
-      case 'outline_continue':
-        return '大纲续写';
-      case 'outline_expand':
-        return '大纲展开';
-      case 'outline_batch_expand':
-        return '批量大纲展开';
-      case 'chapter_generate':
-        return '章节生成';
-      case 'chapter_batch':
-        return '批量章节生成';
-      case 'wizard':
-        return '向导创建';
-      case 'chapter_analysis':
-        return '章节分析';
-      case 'chapter_regenerate':
-        return '章节重写';
-      case 'chapter_partial_regenerate':
-        return '局部重写';
-      case 'character_generate':
-        return '角色生成';
-      case 'organization_generate':
-        return '组织生成';
-      case 'career_generate':
-        return '职业生成';
-      default:
-        return taskType;
-    }
+    const labels: Record<string, string> = {
+      outline_new: t('agent.tasks.types.outline_new'),
+      outline_continue: t('agent.tasks.types.outline_continue'),
+      outline_expand: t('agent.tasks.types.outline_expand'),
+      outline_batch_expand: t('agent.tasks.types.outline_batch_expand'),
+      chapter_generate: t('agent.tasks.types.chapter_generate'),
+      chapter_batch: t('agent.tasks.types.chapter_batch'),
+      wizard: t('agent.tasks.types.wizard'),
+      chapter_analysis: t('agent.tasks.types.chapter_analysis'),
+      chapter_regenerate: t('agent.tasks.types.chapter_regenerate'),
+      chapter_partial_regenerate: t('agent.tasks.types.chapter_partial_regenerate'),
+      character_generate: t('agent.tasks.types.character_generate'),
+      organization_generate: t('agent.tasks.types.organization_generate'),
+      career_generate: t('agent.tasks.types.career_generate'),
+    };
+    return labels[taskType] || taskType;
   };
 
-  const activeTasks = taskList.filter((t) => t.status === 'running' || t.status === 'pending');
+  const activeTasks = taskList.filter((task) => task.status === 'running' || task.status === 'pending');
   const hasActiveTasks = activeTasks.length > 0;
 
   // 没有任务时不显示浮窗
@@ -266,13 +254,13 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
         title={
           <Space>
             <ClockCircleOutlined />
-            <span>后台任务</span>
+            <span>{t('agent.tasks.title')}</span>
             {hasActiveTasks && <Badge count={activeTasks.length} />}
           </Space>
         }
         extra={
           <Space>
-            <Tooltip title="刷新">
+            <Tooltip title={t('agent.tasks.refresh')}>
               <Button
                 type="text"
                 size="small"
@@ -281,16 +269,16 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
                 loading={loading}
               />
             </Tooltip>
-            {taskList.some(t => t.can_delete && (
-              t.status === 'completed' || t.status === 'failed' || t.status === 'cancelled'
+            {taskList.some(task => task.can_delete && (
+              task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled'
             )) && (
               <Popconfirm
-                title="确认清理所有已结束的任务记录？"
+                title={t('agent.tasks.clearConfirmTitle')}
                 onConfirm={handleClearTasks}
-                okText="确认"
-                cancelText="取消"
+                okText={t('agent.confirm')}
+                cancelText={t('agent.cancel')}
               >
-                <Tooltip title="清理已结束任务">
+                <Tooltip title={t('agent.tasks.clearTooltip')}>
                   <Button
                     type="text"
                     size="small"
@@ -322,7 +310,7 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
         {!collapsed && (
           <>
             {taskList.length === 0 ? (
-              <Empty description="暂无任务" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description={t('agent.tasks.empty')} image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
               <List
                 size="small"
@@ -372,7 +360,7 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
                             marginBottom: 4,
                           }}
                         >
-                          错误: {task.error_message}
+                          {t('agent.tasks.errorWithMessage', { message: task.error_message })}
                         </div>
                       )}
 
@@ -380,13 +368,13 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
                         <Space size={4}>
                           {task.can_cancel && (task.status === 'running' || task.status === 'pending') && (
                             <Popconfirm
-                              title="确认取消任务？"
+                              title={t('agent.tasks.cancelConfirmTitle')}
                               onConfirm={() => handleCancelTask(task)}
-                              okText="确认"
-                              cancelText="取消"
+                              okText={t('agent.confirm')}
+                              cancelText={t('agent.cancel')}
                             >
                               <Button size="small" danger>
-                                取消
+                                {t('agent.cancel')}
                               </Button>
                             </Popconfirm>
                           )}
@@ -394,13 +382,13 @@ export const FloatingTaskPanel: React.FC<FloatingTaskPanelProps> = ({
                             task.status === 'failed' ||
                             task.status === 'cancelled') && (
                               <Popconfirm
-                                title="确认删除任务记录？"
+                                title={t('agent.tasks.deleteConfirmTitle')}
                                 onConfirm={() => handleDeleteTask(task.id)}
-                                okText="确认"
-                                cancelText="取消"
+                                okText={t('agent.confirm')}
+                                cancelText={t('agent.cancel')}
                               >
                                 <Button size="small" icon={<DeleteOutlined />}>
-                                  删除
+                                  {t('agent.tasks.delete')}
                                 </Button>
                               </Popconfirm>
                             )}

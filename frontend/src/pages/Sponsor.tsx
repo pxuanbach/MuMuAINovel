@@ -9,59 +9,59 @@ import {
     // StarOutlined,
     WechatOutlined
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Paragraph, Text } = Typography;
 
 interface SponsorOption {
     amount: number | string;
-    label: string;
+    labelKey: string;
     image: string;
     description: string;
 }
 
 interface SponsorBenefit {
     icon: ReactNode;
-    title: string;
-    description: string;
-    price?: string;
+    titleKey: string;
+    descriptionKey: string;
+    priceKey?: string;
 }
 
 const sponsorOptions: SponsorOption[] = [
-    { amount: 5, label: '🌶️ 一包辣条', image: '/5.png', description: '¥5' },
-    { amount: 10, label: '🍱 一顿拼好饭', image: '/10.png', description: '¥10' },
-    { amount: 20, label: '☕ 一杯咖啡', image: '/20.png', description: '¥20' },
-    { amount: 50, label: '🍖 一次烧烤', image: '/50.png', description: '¥50' },
-    { amount: 99, label: '🍲 一顿海底捞', image: '/99.png', description: '¥99' },
+    { amount: 5, labelKey: 'sponsor.options.latiao', image: '/5.png', description: '¥5' },
+    { amount: 10, labelKey: 'sponsor.options.takeout', image: '/10.png', description: '¥10' },
+    { amount: 20, labelKey: 'sponsor.options.coffee', image: '/20.png', description: '¥20' },
+    { amount: 50, labelKey: 'sponsor.options.barbecue', image: '/50.png', description: '¥50' },
+    { amount: 99, labelKey: 'sponsor.options.hotpot', image: '/99.png', description: '¥99' },
 ];
 
 const benefits: SponsorBenefit[] = [
     {
         icon: <WechatOutlined style={{ fontSize: '32px', color: 'var(--ant-color-primary)' }} />,
-        title: '加入赞助群',
-        description: '进入内部群，获取项目第一手更新消息',
-        price: '（🌶️ 一包辣条）'
+        titleKey: 'sponsor.benefits.joinGroup.title',
+        descriptionKey: 'sponsor.benefits.joinGroup.description',
+        priceKey: 'sponsor.benefits.joinGroup.price'
     },
     {
         icon: <FileTextOutlined style={{ fontSize: '32px', color: 'var(--ant-color-primary)' }} />,
-        title: '优先需求响应',
-        description: '您的功能需求和问题反馈将获得优先处理',
-        price: '（🌶️ 一包辣条）'
+        titleKey: 'sponsor.benefits.priority.title',
+        descriptionKey: 'sponsor.benefits.priority.description',
     },
     {
         icon: <RocketOutlined style={{ fontSize: '32px', color: 'var(--ant-color-success)' }} />,
-        title: 'Windows一键启动',
-        description: '获取免安装一键启动包，开箱即可使用',
-        price: '（🌶️ 一包辣条）'
+        titleKey: 'sponsor.benefits.windowsBoot.title',
+        descriptionKey: 'sponsor.benefits.windowsBoot.description',
     },
     {
         icon: <MessageOutlined style={{ fontSize: '32px', color: 'var(--ant-color-warning)' }} />,
-        title: '专属技术支持',
-        description: '获得远程协助和配置指导',
-        price: '（☕ 一杯咖啡）'
+        titleKey: 'sponsor.benefits.techSupport.title',
+        descriptionKey: 'sponsor.benefits.techSupport.description',
+        priceKey: 'sponsor.benefits.techSupport.price'
     }
 ];
 
 export default function Sponsor() {
+    const { t } = useTranslation();
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedOption, setSelectedOption] = useState<SponsorOption | null>(null);
     const { token } = theme.useToken();
@@ -104,13 +104,13 @@ export default function Sponsor() {
                             color: token.colorWhite
                         }}>
                             <Title level={1} style={{ color: token.colorWhite, marginBottom: '8px', fontSize: 'clamp(24px, 5vw, 32px)', fontWeight: 'bold' }}>
-                                赞助 MuMuAINovel
+                                {t('sponsor.title')}
                             </Title>
                             <Text type="secondary" style={{ color: token.colorWhite, fontSize: 'clamp(11px, 2vw, 13px)', letterSpacing: '2px' }}>
                                 SUPPORT MuMuAINovel
                             </Text>
                             <Title level={4} style={{ color: token.colorWhite, marginTop: '8px', marginBottom: '8px' }}>
-                                📚 MuMuAINovel - 基于 AI 的智能小说创作助手
+                                {t('sponsor.subtitle')}
                             </Title>
                         </div>
                     </div>
@@ -119,7 +119,7 @@ export default function Sponsor() {
                     <div style={{ marginBottom: 'clamp(24px, 4vh, 32px)' }}>
                         <Title level={3} style={{ textAlign: 'center', marginBottom: 'clamp(16px, 3vh, 20px)', fontSize: 'clamp(18px, 3vw, 24px)' }}>
                             <CheckCircleOutlined style={{ color: token.colorSuccess, marginRight: '8px' }} />
-                            赞助专属权益
+                            {t('sponsor.benefitsTitle')}
                         </Title>
 
                         <Row
@@ -144,13 +144,13 @@ export default function Sponsor() {
                                         <div style={{ marginBottom: '12px' }}>
                                             {benefit.icon}
                                         </div>
-                                        <Title level={5} style={{ marginBottom: '8px', fontSize: 'clamp(14px, 2.5vw, 16px)' }}>{benefit.title}</Title>
+                                        <Title level={5} style={{ marginBottom: '8px', fontSize: 'clamp(14px, 2.5vw, 16px)' }}>{t(benefit.titleKey)}</Title>
                                         <Paragraph style={{ color: token.colorTextSecondary, marginBottom: 0, fontSize: 'clamp(12px, 2vw, 13px)' }}>
-                                            {benefit.description}
+                                            {t(benefit.descriptionKey)}
                                         </Paragraph>
-                                        {benefit.price && (
+                                        {benefit.priceKey && (
                                             <Paragraph style={{ color: token.colorWarning, margin: '4px 0 0', fontSize: 'clamp(12px, 2vw, 13px)', fontWeight: 600 }}>
-                                                {benefit.price}
+                                                {t(benefit.priceKey)}
                                             </Paragraph>
                                         )}
                                     </Card>
@@ -163,7 +163,7 @@ export default function Sponsor() {
                     <div>
                         <Title level={3} style={{ textAlign: 'center', marginBottom: 'clamp(16px, 3vh, 20px)', fontSize: 'clamp(18px, 3vw, 24px)' }}>
                             <HeartOutlined style={{ color: token.colorError, marginRight: '8px' }} />
-                            选择金额
+                            {t('sponsor.selectAmount')}
                         </Title>
 
                         <Row gutter={[{ xs: 8, sm: 12, md: 16 }, { xs: 8, sm: 12, md: 16 }]} justify="center">
@@ -203,7 +203,7 @@ export default function Sponsor() {
                                             {option.description}
                                         </Title>
                                         <Text style={{ fontSize: 'clamp(12px, 2vw, 14px)', color: token.colorTextSecondary }}>
-                                            {option.label}
+                                            {t(option.labelKey)}
                                         </Text>
                                     </Card>
                                 </Col>
@@ -222,10 +222,10 @@ export default function Sponsor() {
                         marginTop: 'auto'
                     }}>
                         <Title level={4} style={{ marginBottom: '12px', fontSize: 'clamp(16px, 3vw, 20px)' }}>
-                            💖 感谢您对 MuMuAINovel 项目的支持
+                            {t('sponsor.thankTitle')}
                         </Title>
                         <Paragraph style={{ fontSize: 'clamp(12px, 2vw, 14px)', color: token.colorTextSecondary, marginBottom: '12px' }}>
-                            您的赞助将是我持续更新项目的动力，为大家提供更好的AI小说创作体验!
+                            {t('sponsor.thankDesc')}
                         </Paragraph>
                         {/* <div style={{ fontSize: 'clamp(18px, 3vw, 24px)' }}>
                             <StarOutlined style={{ color: token.colorWarning, margin: '0 4px' }} />
@@ -243,16 +243,16 @@ export default function Sponsor() {
                 title={
                     <div style={{ textAlign: 'center' }}>
                         <Title level={3} style={{ marginBottom: '8px' }}>
-                            {selectedOption?.description} {selectedOption?.label}
+                            {selectedOption?.description} {selectedOption?.labelKey ? t(selectedOption.labelKey) : null}
                         </Title>
-                        <Text type="secondary">请使用微信扫码支付</Text>
+                        <Text type="secondary">{t('sponsor.modal.scanPay')}</Text>
                     </div>
                 }
                 open={modalVisible}
                 onCancel={() => setModalVisible(false)}
                 footer={[
                     <Button key="close" type="primary" onClick={() => setModalVisible(false)}>
-                        关闭
+                        {t('sponsor.close')}
                     </Button>
                 ]}
                 width={400}
@@ -261,7 +261,7 @@ export default function Sponsor() {
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                     <Image
                         src={selectedOption?.image}
-                        alt={`${selectedOption?.description}赞助码`}
+                        alt={t('sponsor.modal.qrAlt', { amount: selectedOption?.description })}
                         style={{
                             maxWidth: '280px',
                             borderRadius: '8px',
@@ -270,10 +270,10 @@ export default function Sponsor() {
                         preview={false}
                     />
                     <Paragraph style={{ marginTop: '20px', color: token.colorTextSecondary }}>
-                        扫描二维码完成支付
+                        {t('sponsor.modal.scanToPay')}
                     </Paragraph>
                     <Paragraph style={{ color: token.colorTextTertiary, fontSize: '12px' }}>
-                        支付后可添加微信/QQ联系我们获取权益
+                        {t('sponsor.modal.contact')}
                     </Paragraph>
                 </div>
             </Modal>

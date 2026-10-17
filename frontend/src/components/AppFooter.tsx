@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Typography, Space, Divider, Badge, Button, Grid, theme } from 'antd';
 import { GithubOutlined, CopyrightOutlined, HeartFilled, ClockCircleOutlined, GiftOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { VERSION_INFO, getVersionString } from '../config/version';
 import { checkLatestVersion } from '../services/versionService';
 
@@ -14,6 +15,7 @@ interface AppFooterProps {
 export default function AppFooter({ sidebarWidth = 0 }: AppFooterProps) {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const { t } = useTranslation();
   const [hasUpdate, setHasUpdate] = useState(false);
   const [latestVersion, setLatestVersion] = useState('');
   const [releaseUrl, setReleaseUrl] = useState('');
@@ -92,7 +94,7 @@ export default function AppFooter({ sidebarWidth = 0 }: AppFooterProps) {
                   color: token.colorPrimary,
                   cursor: hasUpdate ? 'pointer' : 'default',
                 }}
-                title={hasUpdate ? `发现新版本 v${latestVersion}，点击查看` : '当前版本'}
+                title={hasUpdate ? t('footer.newVersion', { version: latestVersion }) : t('footer.currentVersion')}
               >
                 <strong style={{ color: token.colorText }}>{VERSION_INFO.projectName}</strong>
                 <span>{getVersionString()}</span>
@@ -114,7 +116,7 @@ export default function AppFooter({ sidebarWidth = 0 }: AppFooterProps) {
                 gap: 4,
               }}
             >
-              赞助
+              {t('footer.sponsorShort')}
             </Button>
             <Divider type="vertical" style={{ margin: '0 4px', borderColor: token.colorBorder }} />
             <Link
@@ -177,7 +179,7 @@ export default function AppFooter({ sidebarWidth = 0 }: AppFooterProps) {
                     e.currentTarget.style.transform = 'scale(1)';
                   }
                 }}
-                title={hasUpdate ? `发现新版本 v${latestVersion}，点击查看` : '当前版本'}
+                title={hasUpdate ? t('footer.newVersion', { version: latestVersion }) : t('footer.currentVersion')}
               >
                 <strong style={{ color: token.colorText }}>{VERSION_INFO.projectName}</strong>
                 <span>{getVersionString()}</span>
@@ -211,7 +213,7 @@ export default function AppFooter({ sidebarWidth = 0 }: AppFooterProps) {
                 color: token.colorTextSecondary,
               }}
             >
-              LinuxDO 社区
+              {t('footer.linuxdo')}
             </Link>
 
             {/* 赞助按钮 */}
@@ -241,7 +243,7 @@ export default function AppFooter({ sidebarWidth = 0 }: AppFooterProps) {
                 e.currentTarget.style.boxShadow = `0 4px 12px ${alphaColor(token.colorPrimary, 0.35)}`;
               }}
             >
-              赞助支持
+              {t('footer.sponsor')}
             </Button>
 
             {/* 许可证 */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, Button, Space, Typography, message, Progress, Modal, theme } from 'antd';
 import { CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import { wizardStreamApi } from '../services/api';
@@ -60,6 +61,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
   resumeProjectId
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { token } = theme.useToken();
   const alphaColor = (color: string, alpha: number) =>
     `color-mix(in srgb, ${color} ${(alpha * 100).toFixed(0)}%, transparent)`;
@@ -111,10 +113,10 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
   const handleRestartGeneration = () => {
     Modal.confirm({
-      title: '确认重新开始生成',
-      content: '当前生成进度将被放弃，并返回灵感对话重新配置。已创建的项目数据不会自动删除。',
-      okText: '重新开始',
-      cancelText: '取消',
+      title: t('wizard.restartConfirmTitle'),
+      content: t('wizard.restartConfirmContent'),
+      okText: t('wizard.restartConfirmOk'),
+      cancelText: t('wizard.restartConfirmCancel'),
       centered: true,
       okButtonProps: { danger: true },
       onOk: () => {
@@ -171,7 +173,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     try {
       setLoading(true);
       setProgress(0);
-      setProgressMessage('检查项目状态...');
+      setProgressMessage(t('wizard.checkingProjectStatus'));
       setErrorDetails('');
       setGenerationData(data);
       setProjectId(projectIdParam);
@@ -182,7 +184,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         signal,
       });
       if (!response.ok) {
-        throw new Error('获取项目信息失败');
+        throw new Error(t('wizard.fetchProjectFailed'));
       }
       const project = await response.json();
       const wizardStep = project.wizard_step || 0;
@@ -200,32 +202,32 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
       if (wizardStep === 0) {
         // 从世界观开始
-        message.info('从世界观步骤开始生成...');
+        message.info(t('wizard.resumeStartFromWorldBuilding'));
         setGenerationSteps({ worldBuilding: 'processing', careers: 'pending', characters: 'pending', outline: 'pending' });
         await resumeFromWorldBuilding(data, signal);
       } else if (wizardStep === 1) {
         // 世界观已完成，从职业体系开始
-        message.info('世界观已完成，从职业体系步骤继续...');
+        message.info(t('wizard.resumeContinueCareers'));
         setGenerationSteps({ worldBuilding: 'completed', careers: 'processing', characters: 'pending', outline: 'pending' });
         setWorldBuildingResult(worldResult);
         setProgress(20);
         await resumeFromCareers(data, worldResult, signal);
       } else if (wizardStep === 2) {
         // 职业体系已完成，从角色开始
-        message.info('职业体系已完成，从角色步骤继续...');
+        message.info(t('wizard.resumeContinueCharacters'));
         setGenerationSteps({ worldBuilding: 'completed', careers: 'completed', characters: 'processing', outline: 'pending' });
         setWorldBuildingResult(worldResult);
         setProgress(40);
         await resumeFromCharacters(data, worldResult, signal);
       } else if (wizardStep === 3) {
         // 角色已完成，从大纲开始
-        message.info('角色已完成，从大纲步骤继续...');
+        message.info(t('wizard.resumeContinueOutline'));
         setGenerationSteps({ worldBuilding: 'completed', careers: 'completed', characters: 'completed', outline: 'processing' });
         setProgress(70);
         await resumeFromOutline(data, projectIdParam, signal);
       } else {
         // 已全部完成
-        message.success('项目已完成,正在跳转...');
+        message.success(t('wizard.resumeAlreadyComplete'));
         setProgress(100);
         onComplete(projectIdParam);
         setTimeout(() => {
@@ -236,10 +238,10 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       if (isAbortError(error)) return;
 
       const apiError = error as ApiError;
-      const errorMsg = apiError.response?.data?.detail || apiError.message || '未知错误';
+      const errorMsg = apiError.response?.data?.detail || apiError.message || t('wizard.unknownError');
       console.error('恢复生成失败:', errorMsg);
       setErrorDetails(errorMsg);
-      message.error('恢复生成失败：' + errorMsg);
+      message.error(t('wizard.resumeFailed') + errorMsg);
       setLoading(false);
     }
   };
@@ -273,7 +275,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('世界观生成失败:', error);
-          setErrorDetails(`世界观生成失败: ${error}`);
+          setErrorDetails(t('wizard.worldBuildingFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, worldBuilding: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -296,7 +298,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     const pid = projectId || worldResult.project_id;
 
     setGenerationSteps(prev => ({ ...prev, careers: 'processing' }));
-    setProgressMessage('正在生成职业体系...');
+    setProgressMessage(t('wizard.generatingCareers'));
 
     await wizardStreamApi.generateCareerSystemStream(
       {
@@ -314,7 +316,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('职业体系生成失败:', error);
-          setErrorDetails(`职业体系生成失败: ${error}`);
+          setErrorDetails(t('wizard.careersFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, careers: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -338,7 +340,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     const pid = projectId || worldResult.project_id;
 
     setGenerationSteps(prev => ({ ...prev, characters: 'processing' }));
-    setProgressMessage('正在生成角色...');
+    setProgressMessage(t('wizard.generatingCharacters'));
 
     await wizardStreamApi.generateCharactersStream(
       {
@@ -366,7 +368,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('角色生成失败:', error);
-          setErrorDetails(`角色生成失败: ${error}`);
+          setErrorDetails(t('wizard.charactersFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, characters: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -387,7 +389,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     signal?: AbortSignal,
   ) => {
     setGenerationSteps(prev => ({ ...prev, outline: 'processing' }));
-    setProgressMessage('正在生成大纲...');
+    setProgressMessage(t('wizard.generatingOutline'));
 
     await wizardStreamApi.generateCompleteOutlineStream(
       {
@@ -409,7 +411,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('大纲生成失败:', error);
-          setErrorDetails(`大纲生成失败: ${error}`);
+          setErrorDetails(t('wizard.outlineFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, outline: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -422,8 +424,8 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
     // 全部完成
     setProgress(100);
-    setProgressMessage('项目创建完成！正在跳转...');
-    message.success('项目创建成功！正在进入项目...');
+    setProgressMessage(t('wizard.creationComplete'));
+    message.success(t('wizard.projectCreatedSuccess'));
     clearStorage();
     setLoading(false);
 
@@ -438,7 +440,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     try {
       setLoading(true);
       setProgress(0);
-      setProgressMessage('开始创建项目...');
+      setProgressMessage(t('wizard.startingCreation'));
       setErrorDetails('');
       setGenerationData(data);
       saveProgress('', data, 'generating');
@@ -447,7 +449,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
       // 步骤1: 生成世界观并创建项目
       setGenerationSteps(prev => ({ ...prev, worldBuilding: 'processing' }));
-      setProgressMessage('正在生成世界观...');
+      setProgressMessage(t('wizard.generatingWorldBuilding'));
 
       const worldResult = await wizardStreamApi.generateWorldBuildingStream(
         {
@@ -475,7 +477,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           },
           onError: (error) => {
             console.error('世界观生成失败:', error);
-            setErrorDetails(`世界观生成失败: ${error}`);
+            setErrorDetails(t('wizard.worldBuildingFailed', { error }));
             setGenerationSteps(prev => ({ ...prev, worldBuilding: 'error' }));
             setLoading(false);
             throw new Error(error);
@@ -487,7 +489,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       );
 
       if (!worldResult?.project_id) {
-        throw new Error('项目创建失败：未获取到项目ID');
+        throw new Error(t('wizard.projectCreationFailedNoId'));
       }
 
       const createdProjectId = worldResult.project_id;
@@ -497,7 +499,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
       // 步骤2: 生成职业体系
       setGenerationSteps(prev => ({ ...prev, careers: 'processing' }));
-      setProgressMessage('正在生成职业体系...');
+      setProgressMessage(t('wizard.generatingCareers'));
 
       await wizardStreamApi.generateCareerSystemStream(
         {
@@ -515,7 +517,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           },
           onError: (error) => {
             console.error('职业体系生成失败:', error);
-            setErrorDetails(`职业体系生成失败: ${error}`);
+            setErrorDetails(t('wizard.careersFailed', { error }));
             setGenerationSteps(prev => ({ ...prev, careers: 'error' }));
             setLoading(false);
             throw new Error(error);
@@ -528,7 +530,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
       // 步骤3: 生成角色
       setGenerationSteps(prev => ({ ...prev, characters: 'processing' }));
-      setProgressMessage('正在生成角色...');
+      setProgressMessage(t('wizard.generatingCharacters'));
 
       await wizardStreamApi.generateCharactersStream(
         {
@@ -556,7 +558,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           },
           onError: (error) => {
             console.error('角色生成失败:', error);
-            setErrorDetails(`角色生成失败: ${error}`);
+            setErrorDetails(t('wizard.charactersFailed', { error }));
             setGenerationSteps(prev => ({ ...prev, characters: 'error' }));
             setLoading(false);
             throw new Error(error);
@@ -569,7 +571,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
       // 步骤3: 生成大纲
       setGenerationSteps(prev => ({ ...prev, outline: 'processing' }));
-      setProgressMessage('正在生成大纲...');
+      setProgressMessage(t('wizard.generatingOutline'));
 
       await wizardStreamApi.generateCompleteOutlineStream(
         {
@@ -591,7 +593,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           },
           onError: (error) => {
             console.error('大纲生成失败:', error);
-            setErrorDetails(`大纲生成失败: ${error}`);
+            setErrorDetails(t('wizard.outlineFailed', { error }));
             setGenerationSteps(prev => ({ ...prev, outline: 'error' }));
             setLoading(false);
             throw new Error(error);
@@ -604,8 +606,8 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
       // 全部完成 - 自动跳转到项目详情页
       setProgress(100);
-      setProgressMessage('项目创建完成！正在跳转...');
-      message.success('项目创建成功！正在进入项目...');
+      setProgressMessage(t('wizard.creationComplete'));
+      message.success(t('wizard.projectCreatedSuccess'));
       clearStorage();
 
       // 调用完成回调
@@ -620,10 +622,10 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       if (isAbortError(error)) return;
 
       const apiError = error as ApiError;
-      const errorMsg = apiError.response?.data?.detail || apiError.message || '未知错误';
+      const errorMsg = apiError.response?.data?.detail || apiError.message || t('wizard.unknownError');
       console.error('创建项目失败:', errorMsg);
       setErrorDetails(errorMsg);
-      message.error('创建项目失败：' + errorMsg);
+      message.error(t('wizard.createProjectFailed') + errorMsg);
       setLoading(false);
     }
   };
@@ -631,7 +633,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
   // 智能重试：从失败的步骤继续生成
   const handleSmartRetry = async () => {
     if (!generationData) {
-      message.warning('缺少生成数据');
+      message.warning(t('wizard.missingGenerationData'));
       return;
     }
 
@@ -640,22 +642,22 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
 
     try {
       if (generationSteps.worldBuilding === 'error') {
-        message.info('从世界观步骤开始重新生成...');
+        message.info(t('wizard.retryStartWorldBuilding'));
         await retryFromWorldBuilding();
       } else if (generationSteps.careers === 'error') {
-        message.info('从职业体系步骤继续生成...');
+        message.info(t('wizard.retryContinueCareers'));
         await retryFromCareers();
       } else if (generationSteps.characters === 'error') {
-        message.info('从角色步骤继续生成...');
+        message.info(t('wizard.retryContinueCharacters'));
         await retryFromCharacters();
       } else if (generationSteps.outline === 'error') {
-        message.info('从大纲步骤继续生成...');
+        message.info(t('wizard.retryContinueOutline'));
         await retryFromOutline();
       }
     } catch (error) {
       console.error('智能重试失败:', error);
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      message.error('重试失败：' + errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('wizard.unknownError');
+      message.error(t('wizard.retryFailed') + errorMessage);
       setLoading(false);
     }
   };
@@ -665,7 +667,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     if (!generationData) return;
 
     setGenerationSteps(prev => ({ ...prev, worldBuilding: 'processing' }));
-    setProgressMessage('重新生成世界观...');
+    setProgressMessage(t('wizard.regeneratingWorldBuilding'));
 
     const genreString = Array.isArray(generationData.genre) ? generationData.genre.join('、') : generationData.genre;
 
@@ -694,7 +696,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('世界观生成失败:', error);
-          setErrorDetails(`世界观生成失败: ${error}`);
+          setErrorDetails(t('wizard.worldBuildingFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, worldBuilding: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -706,7 +708,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     );
 
     if (!worldResult?.project_id) {
-      throw new Error('项目创建失败：未获取到项目ID');
+      throw new Error(t('wizard.projectCreationFailedNoId'));
     }
 
     await continueFromCareers(worldResult);
@@ -715,20 +717,20 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
   // 从职业体系步骤继续
   const retryFromCareers = async () => {
     if (!worldBuildingResult) {
-      message.warning('缺少必要数据，无法从职业体系步骤继续');
+      message.warning(t('wizard.missingDataContinueCareers'));
       setLoading(false);
       return;
     }
 
     const pid = worldBuildingResult.project_id || projectId;
     if (!pid) {
-      message.warning('缺少项目ID，无法从职业体系步骤继续');
+      message.warning(t('wizard.missingProjectIdContinueCareers'));
       setLoading(false);
       return;
     }
 
     setGenerationSteps(prev => ({ ...prev, careers: 'processing' }));
-    setProgressMessage('重新生成职业体系...');
+    setProgressMessage(t('wizard.regeneratingCareers'));
 
     await wizardStreamApi.generateCareerSystemStream(
       {
@@ -745,7 +747,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('职业体系生成失败:', error);
-          setErrorDetails(`职业体系生成失败: ${error}`);
+          setErrorDetails(t('wizard.careersFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, careers: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -762,7 +764,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
   // 从角色步骤继续
   const retryFromCharacters = async () => {
     if (!generationData || !worldBuildingResult) {
-      message.warning('缺少必要数据，无法从角色步骤继续');
+      message.warning(t('wizard.missingDataContinueCharacters'));
       setLoading(false);
       return;
     }
@@ -770,13 +772,13 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     // 优先使用 worldBuildingResult 中的 project_id，因为重试可能创建了新项目
     const pid = worldBuildingResult.project_id || projectId;
     if (!pid) {
-      message.warning('缺少项目ID，无法从角色步骤继续');
+      message.warning(t('wizard.missingProjectIdContinueCharacters'));
       setLoading(false);
       return;
     }
 
     setGenerationSteps(prev => ({ ...prev, characters: 'processing' }));
-    setProgressMessage('重新生成角色...');
+    setProgressMessage(t('wizard.regeneratingCharacters'));
 
     const genreString = Array.isArray(generationData.genre) ? generationData.genre.join('、') : generationData.genre;
 
@@ -805,7 +807,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('角色生成失败:', error);
-          setErrorDetails(`角色生成失败: ${error}`);
+          setErrorDetails(t('wizard.charactersFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, characters: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -822,7 +824,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
   // 从大纲步骤继续
   const retryFromOutline = async () => {
     if (!generationData) {
-      message.warning('缺少必要数据，无法从大纲步骤继续');
+      message.warning(t('wizard.missingDataContinueOutline'));
       setLoading(false);
       return;
     }
@@ -830,13 +832,13 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     // 优先使用 worldBuildingResult 中的 project_id，fallback 到状态中的 projectId
     const pid = (worldBuildingResult?.project_id) || projectId;
     if (!pid) {
-      message.warning('缺少项目ID，无法从大纲步骤继续');
+      message.warning(t('wizard.missingProjectIdContinueOutline'));
       setLoading(false);
       return;
     }
 
     setGenerationSteps(prev => ({ ...prev, outline: 'processing' }));
-    setProgressMessage('重新生成大纲...');
+    setProgressMessage(t('wizard.regeneratingOutline'));
 
     await wizardStreamApi.generateCompleteOutlineStream(
       {
@@ -857,7 +859,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('大纲生成失败:', error);
-          setErrorDetails(`大纲生成失败: ${error}`);
+          setErrorDetails(t('wizard.outlineFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, outline: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -869,8 +871,8 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     );
 
     setProgress(100);
-    setProgressMessage('项目创建完成！正在跳转...');
-    message.success('项目创建成功！正在进入项目...');
+    setProgressMessage(t('wizard.creationComplete'));
+    message.success(t('wizard.projectCreatedSuccess'));
     setLoading(false);
 
     // 调用完成回调
@@ -891,7 +893,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     const pid = worldResult.project_id;
 
     setGenerationSteps(prev => ({ ...prev, careers: 'processing' }));
-    setProgressMessage('正在生成职业体系...');
+    setProgressMessage(t('wizard.generatingCareers'));
 
     await wizardStreamApi.generateCareerSystemStream(
       {
@@ -908,7 +910,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('职业体系生成失败:', error);
-          setErrorDetails(`职业体系生成失败: ${error}`);
+          setErrorDetails(t('wizard.careersFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, careers: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -930,7 +932,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     const genreString = Array.isArray(generationData.genre) ? generationData.genre.join('、') : generationData.genre;
 
     setGenerationSteps(prev => ({ ...prev, characters: 'processing' }));
-    setProgressMessage('正在生成角色...');
+    setProgressMessage(t('wizard.generatingCharacters'));
 
     await wizardStreamApi.generateCharactersStream(
       {
@@ -957,7 +959,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('角色生成失败:', error);
-          setErrorDetails(`角色生成失败: ${error}`);
+          setErrorDetails(t('wizard.charactersFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, characters: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -976,7 +978,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     if (!generationData || !pid) return;
 
     setGenerationSteps(prev => ({ ...prev, outline: 'processing' }));
-    setProgressMessage('正在生成大纲...');
+    setProgressMessage(t('wizard.generatingOutline'));
 
     await wizardStreamApi.generateCompleteOutlineStream(
       {
@@ -997,7 +999,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         },
         onError: (error) => {
           console.error('大纲生成失败:', error);
-          setErrorDetails(`大纲生成失败: ${error}`);
+          setErrorDetails(t('wizard.outlineFailed', { error }));
           setGenerationSteps(prev => ({ ...prev, outline: 'error' }));
           setLoading(false);
           throw new Error(error);
@@ -1009,8 +1011,8 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     );
 
     setProgress(100);
-    setProgressMessage('项目创建完成！正在跳转...');
-    message.success('项目创建成功！正在进入项目...');
+    setProgressMessage(t('wizard.creationComplete'));
+    message.success(t('wizard.projectCreatedSuccess'));
     setLoading(false);
 
     // 调用完成回调
@@ -1031,7 +1033,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       return {
         icon: <CheckCircleOutlined />,
         color: token.colorSuccess,
-        text: '已完成',
+        text: t('wizard.statusCompleted'),
         background: `linear-gradient(135deg, ${alphaColor(token.colorSuccess, 0.12)} 0%, ${token.colorBgContainer} 100%)`,
         borderColor: alphaColor(token.colorSuccess, 0.28),
       };
@@ -1041,7 +1043,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       return {
         icon: <LoadingOutlined spin />,
         color: token.colorPrimary,
-        text: '进行中',
+        text: t('wizard.statusProcessing'),
         background: `linear-gradient(135deg, ${alphaColor(token.colorPrimary, 0.14)} 0%, ${token.colorBgContainer} 100%)`,
         borderColor: alphaColor(token.colorPrimary, 0.32),
       };
@@ -1051,7 +1053,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       return {
         icon: '✕',
         color: token.colorError,
-        text: '失败',
+        text: t('wizard.statusFailed'),
         background: `linear-gradient(135deg, ${alphaColor(token.colorError, 0.12)} 0%, ${token.colorBgContainer} 100%)`,
         borderColor: alphaColor(token.colorError, 0.32),
       };
@@ -1060,7 +1062,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     return {
       icon: '○',
       color: token.colorTextQuaternary,
-      text: '等待中',
+      text: t('wizard.statusPending'),
       background: token.colorFillQuaternary,
       borderColor: token.colorBorderSecondary,
     };
@@ -1078,10 +1080,10 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
       : token.colorPrimary;
 
   const stepItems = [
-    { key: 'worldBuilding', label: '生成世界观', step: generationSteps.worldBuilding },
-    { key: 'careers', label: '生成职业体系', step: generationSteps.careers },
-    { key: 'characters', label: '生成角色', step: generationSteps.characters },
-    { key: 'outline', label: '生成大纲', step: generationSteps.outline },
+    { key: 'worldBuilding', label: t('wizard.stepWorldBuilding'), step: generationSteps.worldBuilding },
+    { key: 'careers', label: t('wizard.stepCareerSystem'), step: generationSteps.careers },
+    { key: 'characters', label: t('wizard.stepCharacters'), step: generationSteps.characters },
+    { key: 'outline', label: t('wizard.stepOutline'), step: generationSteps.outline },
   ];
 
   const availableViewportHeight = isMobile
@@ -1123,7 +1125,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
             overflowWrap: 'break-word',
           }}
         >
-          正在为《{config.title}》生成内容
+          {t('wizard.generatingFor', { title: config.title })}
         </Title>
 
         <Paragraph
@@ -1139,8 +1141,8 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           }}
         >
           {hasError
-            ? '生成流程中断，已保留当前进度与上下文信息，可从失败步骤继续重试。'
-            : '系统会依次生成世界观、职业体系、角色与大纲，请耐心等待。'}
+            ? t('wizard.interruptedParagraph')
+            : t('wizard.normalParagraph')}
         </Paragraph>
       </div>
 
@@ -1187,7 +1189,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
                   letterSpacing: 0.4,
                 }}
               >
-                当前进度
+                {t('wizard.currentProgress')}
               </Text>
               <Paragraph
                 style={{
@@ -1200,7 +1202,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
                   overflowWrap: 'break-word',
                 }}
               >
-                {progressMessage || '准备生成...'}
+                {progressMessage || t('sse.preparing')}
               </Paragraph>
             </div>
 
@@ -1255,7 +1257,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
             }}
           >
             <Text strong style={{ color: token.colorError, display: 'block', marginBottom: 8 }}>
-              错误详情
+              {t('wizard.errorDetailsTitle')}
             </Text>
             <Text
               style={{
@@ -1387,7 +1389,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           fontSize: isMobile ? 13 : 14,
         }}
       >
-        {hasError ? '可点击下方智能重试，从失败节点继续生成，避免重复执行已完成步骤。' : '请勿关闭页面，生成完成后将自动进入项目详情页。'}
+        {hasError ? t('wizard.retryHint') : t('wizard.doNotCloseAutoEnter')}
       </Paragraph>
 
       {hasError && (
@@ -1408,7 +1410,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
               boxShadow: `0 10px 24px ${alphaColor(token.colorPrimary, 0.22)}`,
             }}
           >
-            智能重试
+            {t('wizard.smartRetry')}
           </Button>
           {onBack && (
             <Button
@@ -1422,7 +1424,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
                 borderRadius: 12,
               }}
             >
-              重新开始生成
+              {t('wizard.restartGeneration')}
             </Button>
           )}
         </Space>

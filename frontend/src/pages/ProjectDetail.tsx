@@ -26,7 +26,9 @@ import {
 import { useStore } from '../store';
 import { useCharacterSync, useOutlineSync, useChapterSync } from '../store/hooks';
 import { projectApi } from '../services/api';
+import { useTranslation } from 'react-i18next';
 import ThemeSwitch from '../components/ThemeSwitch';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useThemeMode } from '../theme/useThemeMode';
 import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../utils/sidebarState';
 import FloatingTaskPanel from '../components/FloatingTaskPanel';
@@ -42,6 +44,7 @@ export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState<boolean>(() => getStoredSidebarCollapsed());
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [mobile, setMobile] = useState(isMobile());
@@ -156,87 +159,87 @@ export default function ProjectDetail() {
     {
       key: 'sponsor',
       icon: <HeartOutlined />,
-      label: <Link to={`/project/${projectId}/sponsor`}>赞助支持</Link>,
+      label: <Link to={`/project/${projectId}/sponsor`}>{t('nav.sponsor')}</Link>,
     },
     {
       type: 'group' as const,
-      label: '创作管理',
+      label: t('nav.creation'),
       children: [
         {
           key: 'world-setting',
           icon: <GlobalOutlined />,
-          label: <Link to={`/project/${projectId}/world-setting`}>世界设定</Link>,
+          label: <Link to={`/project/${projectId}/world-setting`}>{t('nav.worldSetting')}</Link>,
         },
         {
           key: 'characters',
           icon: <TeamOutlined />,
-          label: <Link to={`/project/${projectId}/characters`}>角色管理</Link>,
+          label: <Link to={`/project/${projectId}/characters`}>{t('nav.characters')}</Link>,
         },
         {
           key: 'organizations',
           icon: <BankOutlined />,
-          label: <Link to={`/project/${projectId}/organizations`}>组织管理</Link>,
+          label: <Link to={`/project/${projectId}/organizations`}>{t('nav.organizations')}</Link>,
         },
         {
           key: 'careers',
           icon: <TrophyOutlined />,
-          label: <Link to={`/project/${projectId}/careers`}>职业管理</Link>,
+          label: <Link to={`/project/${projectId}/careers`}>{t('nav.careers')}</Link>,
         },
         {
           key: 'relationships',
           icon: <ApartmentOutlined />,
-          label: <Link to={`/project/${projectId}/relationships`}>关系管理</Link>,
+          label: <Link to={`/project/${projectId}/relationships`}>{t('nav.relationships')}</Link>,
         },
         {
           key: 'outline',
           icon: <FileTextOutlined />,
-          label: <Link to={`/project/${projectId}/outline`}>大纲管理</Link>,
+          label: <Link to={`/project/${projectId}/outline`}>{t('nav.outline')}</Link>,
         },
         {
           key: 'chapters',
           icon: <BookOutlined />,
-          label: <Link to={`/project/${projectId}/chapters`}>章节管理</Link>,
+          label: <Link to={`/project/${projectId}/chapters`}>{t('nav.chapters')}</Link>,
         },
         {
           key: 'chapter-analysis',
           icon: <FundOutlined />,
-          label: <Link to={`/project/${projectId}/chapter-analysis`}>剧情分析</Link>,
+          label: <Link to={`/project/${projectId}/chapter-analysis`}>{t('nav.chapterAnalysis')}</Link>,
         },
         {
           key: 'foreshadows',
           icon: <BulbOutlined />,
-          label: <Link to={`/project/${projectId}/foreshadows`}>伏笔管理</Link>,
+          label: <Link to={`/project/${projectId}/foreshadows`}>{t('nav.foreshadows')}</Link>,
         },
         {
           key: 'knowledge-base',
           icon: <DatabaseOutlined />,
-          label: <Link to={`/project/${projectId}/knowledge-base`}>知识库管理</Link>,
+          label: <Link to={`/project/${projectId}/knowledge-base`}>{t('nav.knowledgeBase')}</Link>,
         },
       ],
     },
     {
       type: 'group' as const,
-      label: '创作工具',
+      label: t('nav.creationTools'),
       children: [
         {
           key: 'writing-styles',
           icon: <EditOutlined />,
-          label: <Link to={`/project/${projectId}/writing-styles`}>写作风格</Link>,
+          label: <Link to={`/project/${projectId}/writing-styles`}>{t('nav.writingStyles')}</Link>,
         },
         {
           key: 'prompt-workshop',
           icon: <CloudOutlined />,
-          label: <Link to={`/project/${projectId}/prompt-workshop`}>提示词工坊</Link>,
+          label: <Link to={`/project/${projectId}/prompt-workshop`}>{t('nav.promptWorkshop')}</Link>,
         },
         {
           key: 'skill-chat',
           icon: <ThunderboltOutlined />,
-          label: <Link to={`/project/${projectId}/skill-chat`}>Skill 工具箱</Link>,
+          label: <Link to={`/project/${projectId}/skill-chat`}>{t('nav.skillChat')}</Link>,
         },
         {
           key: 'skill-manage',
           icon: <SettingOutlined />,
-          label: <Link to={`/project/${projectId}/skill-manage`}>Skill 管理</Link>,
+          label: <Link to={`/project/${projectId}/skill-manage`}>{t('nav.skillManage')}</Link>,
         },
       ],
     },
@@ -246,77 +249,77 @@ export default function ProjectDetail() {
     {
       key: 'sponsor',
       icon: <HeartOutlined />,
-      label: <Link to={`/project/${projectId}/sponsor`}>赞助支持</Link>,
+      label: <Link to={`/project/${projectId}/sponsor`}>{t('nav.sponsor')}</Link>,
     },
     {
       key: 'world-setting',
       icon: <GlobalOutlined />,
-      label: <Link to={`/project/${projectId}/world-setting`}>世界设定</Link>,
+      label: <Link to={`/project/${projectId}/world-setting`}>{t('nav.worldSetting')}</Link>,
     },
     {
       key: 'careers',
       icon: <TrophyOutlined />,
-      label: <Link to={`/project/${projectId}/careers`}>职业管理</Link>,
+      label: <Link to={`/project/${projectId}/careers`}>{t('nav.careers')}</Link>,
     },
     {
       key: 'characters',
       icon: <TeamOutlined />,
-      label: <Link to={`/project/${projectId}/characters`}>角色管理</Link>,
+      label: <Link to={`/project/${projectId}/characters`}>{t('nav.characters')}</Link>,
     },
     {
       key: 'relationships',
       icon: <ApartmentOutlined />,
-      label: <Link to={`/project/${projectId}/relationships`}>关系管理</Link>,
+      label: <Link to={`/project/${projectId}/relationships`}>{t('nav.relationships')}</Link>,
     },
     {
       key: 'organizations',
       icon: <BankOutlined />,
-      label: <Link to={`/project/${projectId}/organizations`}>组织管理</Link>,
+      label: <Link to={`/project/${projectId}/organizations`}>{t('nav.organizations')}</Link>,
     },
     {
       key: 'outline',
       icon: <FileTextOutlined />,
-      label: <Link to={`/project/${projectId}/outline`}>大纲管理</Link>,
+      label: <Link to={`/project/${projectId}/outline`}>{t('nav.outline')}</Link>,
     },
     {
       key: 'chapters',
       icon: <BookOutlined />,
-      label: <Link to={`/project/${projectId}/chapters`}>章节管理</Link>,
+      label: <Link to={`/project/${projectId}/chapters`}>{t('nav.chapters')}</Link>,
     },
     {
       key: 'chapter-analysis',
       icon: <FundOutlined />,
-      label: <Link to={`/project/${projectId}/chapter-analysis`}>剧情分析</Link>,
+      label: <Link to={`/project/${projectId}/chapter-analysis`}>{t('nav.chapterAnalysis')}</Link>,
     },
     {
       key: 'foreshadows',
       icon: <BulbOutlined />,
-      label: <Link to={`/project/${projectId}/foreshadows`}>伏笔管理</Link>,
+      label: <Link to={`/project/${projectId}/foreshadows`}>{t('nav.foreshadows')}</Link>,
     },
     {
       key: 'knowledge-base',
       icon: <DatabaseOutlined />,
-      label: <Link to={`/project/${projectId}/knowledge-base`}>知识库管理</Link>,
+      label: <Link to={`/project/${projectId}/knowledge-base`}>{t('nav.knowledgeBase')}</Link>,
     },
     {
       key: 'writing-styles',
       icon: <EditOutlined />,
-      label: <Link to={`/project/${projectId}/writing-styles`}>写作风格</Link>,
+      label: <Link to={`/project/${projectId}/writing-styles`}>{t('nav.writingStyles')}</Link>,
     },
     {
       key: 'prompt-workshop',
       icon: <CloudOutlined />,
-      label: <Link to={`/project/${projectId}/prompt-workshop`}>提示词工坊</Link>,
+      label: <Link to={`/project/${projectId}/prompt-workshop`}>{t('nav.promptWorkshop')}</Link>,
     },
     {
       key: 'skill-chat',
       icon: <ThunderboltOutlined />,
-      label: <Link to={`/project/${projectId}/skill-chat`}>Skill 工具箱</Link>,
+      label: <Link to={`/project/${projectId}/skill-chat`}>{t('nav.skillChat')}</Link>,
     },
     {
       key: 'skill-manage',
       icon: <SettingOutlined />,
-      label: <Link to={`/project/${projectId}/skill-manage`}>Skill 管理</Link>,
+      label: <Link to={`/project/${projectId}/skill-manage`}>{t('nav.skillManage')}</Link>,
     },
   ];
 
@@ -539,10 +542,11 @@ export default function ProjectDetail() {
             {renderMenu()}
             <div style={{ padding: 16, borderTop: `1px solid ${token.colorBorderSecondary}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: token.colorTextTertiary, marginBottom: 8 }}>
-                <span>主题模式</span>
-                <span>{resolvedMode === 'dark' ? '深色' : '浅色'}</span>
+                <span>{t('theme.modeLabel')}</span>
+                <span>{resolvedMode === 'dark' ? t('theme.darkShort') : t('theme.lightShort')}</span>
               </div>
               <ThemeSwitch block />
+              <LanguageSwitcher block />
             </div>
           </Drawer>
         ) : (
@@ -653,7 +657,7 @@ export default function ProjectDetail() {
                       type="text"
                       icon={collapsedThemeIcon}
                       onClick={cycleThemeMode}
-                      title={`主题模式：${mode === 'light' ? '浅色' : mode === 'dark' ? '深色' : '跟随系统'}（点击切换）`}
+                      title={t('theme.cycleTitle', { mode: mode === 'light' ? t('theme.lightShort') : mode === 'dark' ? t('theme.darkShort') : t('theme.systemShort') })}
                       style={{
                         width: 40,
                         height: 40,
@@ -664,6 +668,7 @@ export default function ProjectDetail() {
                         padding: 0,
                       }}
                     />
+                    <LanguageSwitcher size="small" iconOnly />
                     <Button
                       type="text"
                       icon={<ArrowLeftOutlined />}
@@ -682,10 +687,11 @@ export default function ProjectDetail() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: token.colorTextTertiary }}>
-                      <span>主题模式</span>
-                      <span>{resolvedMode === 'dark' ? '深色' : '浅色'}</span>
+                      <span>{t('theme.modeLabel')}</span>
+                      <span>{resolvedMode === 'dark' ? t('theme.darkShort') : t('theme.lightShort')}</span>
                     </div>
                     <ThemeSwitch block />
+                    <LanguageSwitcher block />
                     <Button
                       type="text"
                       icon={<ArrowLeftOutlined />}
@@ -698,7 +704,7 @@ export default function ProjectDetail() {
                         padding: '0 12px'
                       }}
                     >
-                      返回主页
+                      {t('nav.backHome')}
                     </Button>
                   </div>
                 )}

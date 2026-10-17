@@ -35,6 +35,7 @@ import {
 } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { projectAgentApi } from '../../services/api';
 import { eventBus, EventNames } from '../../store/eventBus';
@@ -72,24 +73,10 @@ interface ProjectAgentPanelProps {
   onExpandedChange?: (expanded: boolean, width: number) => void;
 }
 
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') return '（空）';
+function formatValue(value: unknown, emptyText: string): string {
+  if (value === null || value === undefined || value === '') return emptyText;
   if (typeof value === 'string') return value;
   return JSON.stringify(value, null, 2);
-}
-
-function fieldLabel(field: string): string {
-  const labels: Record<string, string> = {
-    title: '标题', description: '简介', theme: '主题', genre: '类型',
-    target_words: '目标字数', status: '状态', content: '内容', summary: '摘要',
-    name: '名称', age: '年龄', gender: '性别', role_type: '角色类型',
-    personality: '性格', background: '背景', appearance: '外貌', traits: '特征',
-    world_time_period: '时代背景', world_location: '地点',
-    world_atmosphere: '世界氛围', world_rules: '世界规则',
-    chapter_count: '章节数', narrative_perspective: '叙事视角',
-    character_count: '角色数',
-  };
-  return labels[field] || field;
 }
 
 function timestampMs(value?: string): number | undefined {
@@ -123,6 +110,7 @@ export default function ProjectAgentPanel({
 }: ProjectAgentPanelProps) {
   const { token } = theme.useToken();
   const location = useLocation();
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(() => localStorage.getItem(EXPANDED_KEY) !== 'false');
   const [panelWidth, setPanelWidth] = useState(() => {
     const value = Number(localStorage.getItem(WIDTH_KEY));
@@ -357,7 +345,7 @@ export default function ProjectAgentPanel({
           ? {
               ...step,
               status: aborted ? 'cancelled' : 'failed',
-              content: aborted ? '本次执行已由用户停止。' : '本次执行因请求失败而中止。',
+              content: aborted ? t('agent.panel.step.stopped') : t('agent.panel.step.failed'),
               updated_at: new Date().toISOString(),
             }
           : step
@@ -365,15 +353,15 @@ export default function ProjectAgentPanel({
       if (aborted) {
         setMessages(items => items.map(item => (
           (item.id === streamAssistantId || item.id === assistantId) && !item.content
-            ? { ...item, content: '已停止生成。' }
+            ? { ...item, content: t('agent.panel.generationStopped') }
             : item
         )));
       } else {
-        const detail = (error as Error).message || '木木创作助手请求失败';
+        const detail = (error as Error).message || t('agent.panel.requestFailed');
         message.error(detail);
         setMessages(items => items.map(item => (
           (item.id === streamAssistantId || item.id === assistantId) && !item.content
-            ? { ...item, content: `请求失败：${detail}` }
+            ? { ...item, content: t('agent.panel.requestFailedWithDetail', { detail }) }
             : item
         )));
       }
@@ -404,7 +392,7 @@ export default function ProjectAgentPanel({
       if (activeConversationId) await loadConversation(activeConversationId);
       await loadConversations();
     } catch (error) {
-      message.error((error as Error).message || '处理修改失败');
+      message.error((error as Error).message || t('agent.panel.processChangeFailed'));
       console.error('处理木木创作助手修改失败:', error);
       if (activeConversationId) await loadConversation(activeConversationId);
     } finally {
@@ -430,21 +418,21 @@ export default function ProjectAgentPanel({
       if (activeConversationId) await loadConversation(activeConversationId);
       await loadConversations();
       if (completed && !failures.length) {
-        message.success(`已批准并执行 ${completed} 项修改`);
+        message.success(t('agent.panel.approvedAll', { count: completed }));
       } else if (completed) {
-        message.warning(`${completed} 项修改已执行，${failures.length} 项未执行`);
+        message.warning(t('agent.panel.partialApproved', { completed, failed: failures.length }));
       } else if (failures.length) {
-        message.error('没有修改被执行，请检查预览后重试');
+        message.error(t('agent.panel.noneApproved'));
       }
     } finally {
       setApprovingAllMessageId(undefined);
     }
-  }, [activeConversationId, approvingAllMessageId, decidingId, loadConversation, loadConversations, notifyToolResources, projectId]);
+  }, [activeConversationId, approvingAllMessageId, decidingId, loadConversation, loadConversations, notifyToolResources, projectId, t]);
 
   const toggleAutoApprove = (enabled: boolean) => {
     setAutoApprove(enabled);
     localStorage.setItem(AUTO_APPROVE_KEY, String(enabled));
-    message.info(enabled ? '已开启自动批准修改' : '已切换为手动批准修改');
+    message.info(enabled ? t('agent.panel.autoApproveOn') : t('agent.panel.autoApproveOff'));
   };
 
   // 开启自动批准后，处理已经在历史对话中等待确认的修改。
@@ -482,9 +470,9 @@ export default function ProjectAgentPanel({
   const conversationMenu = useMemo(() => ({
     items: conversations.length
       ? conversations.map(item => ({ key: item.id, label: item.title }))
-      : [{ key: 'empty', label: '暂无历史对话', disabled: true }],
+      : [{ key: 'empty', label: t('agent.panel.noHistory'), disabled: true }],
     onClick: ({ key }: { key: string }) => key !== 'empty' && void loadConversation(key),
-  }), [conversations, loadConversation]);
+  }), [conversations, loadConversation, t]);
 
   const renderStepIcon = (step: AgentExecutionStep) => {
     if (step.status === 'running') return <LoadingOutlined spin style={{ color: token.colorPrimary }} />;
@@ -499,11 +487,40 @@ export default function ProjectAgentPanel({
   };
 
   const categoryLabel = (category: string) => ({
-    analysis: '思考摘要',
-    project: '项目工具',
-    mcp: 'MCP',
-    skill: 'Skill',
-  }[category] || '工具');
+    analysis: t('agent.panel.categories.analysis'),
+    project: t('agent.panel.categories.project'),
+    mcp: t('agent.panel.categories.mcp'),
+    skill: t('agent.panel.categories.skill'),
+  }[category] || t('agent.panel.categories.default'));
+
+  const fieldLabel = (field: string): string => {
+    const labels: Record<string, string> = {
+      title: t('agent.panel.fields.title'),
+      description: t('agent.panel.fields.description'),
+      theme: t('agent.panel.fields.theme'),
+      genre: t('agent.panel.fields.genre'),
+      target_words: t('agent.panel.fields.target_words'),
+      status: t('agent.panel.fields.status'),
+      content: t('agent.panel.fields.content'),
+      summary: t('agent.panel.fields.summary'),
+      name: t('agent.panel.fields.name'),
+      age: t('agent.panel.fields.age'),
+      gender: t('agent.panel.fields.gender'),
+      role_type: t('agent.panel.fields.role_type'),
+      personality: t('agent.panel.fields.personality'),
+      background: t('agent.panel.fields.background'),
+      appearance: t('agent.panel.fields.appearance'),
+      traits: t('agent.panel.fields.traits'),
+      world_time_period: t('agent.panel.fields.world_time_period'),
+      world_location: t('agent.panel.fields.world_location'),
+      world_atmosphere: t('agent.panel.fields.world_atmosphere'),
+      world_rules: t('agent.panel.fields.world_rules'),
+      chapter_count: t('agent.panel.fields.chapter_count'),
+      narrative_perspective: t('agent.panel.fields.narrative_perspective'),
+      character_count: t('agent.panel.fields.character_count'),
+    };
+    return labels[field] || field;
+  };
 
   const renderChangePreview = (toolCall?: AgentToolCall) => {
     if (!toolCall?.preview) return null;
@@ -517,12 +534,12 @@ export default function ProjectAgentPanel({
               marginTop: 4, padding: 8, borderRadius: 6, fontSize: 12,
               background: token.colorErrorBg, textDecoration: 'line-through',
               whiteSpace: 'pre-wrap', maxHeight: 120, overflow: 'auto',
-            }}>{formatValue(change.before)}</div>
+            }}>{formatValue(change.before, t('agent.panel.empty'))}</div>
             <div style={{
               marginTop: 4, padding: 8, borderRadius: 6, fontSize: 12,
               background: token.colorSuccessBg, whiteSpace: 'pre-wrap',
               maxHeight: 160, overflow: 'auto',
-            }}>{formatValue(change.after)}</div>
+            }}>{formatValue(change.after, t('agent.panel.empty'))}</div>
           </div>
         ))}
         {toolCall.status === 'waiting_confirmation' && (
@@ -532,11 +549,11 @@ export default function ProjectAgentPanel({
               loading={decidingId === toolCall.id}
               disabled={Boolean(approvingAllMessageId)}
               onClick={() => void decideTool(toolCall, true)}
-            >确认修改</Button>
+            >{t('agent.panel.confirmChange')}</Button>
             <Button
               size="small" icon={<CloseOutlined />} disabled={Boolean(decidingId || approvingAllMessageId)}
               onClick={() => void decideTool(toolCall, false)}
-            >取消</Button>
+            >{t('agent.cancel')}</Button>
           </Space>
         )}
       </div>
@@ -571,14 +588,14 @@ export default function ProjectAgentPanel({
       && ordered.some(step => step.tool_call_id === toolCall.id)
     ));
     const statusTag = running
-      ? <Tag icon={<LoadingOutlined spin />} color="processing">执行中</Tag>
+      ? <Tag icon={<LoadingOutlined spin />} color="processing">{t('agent.panel.process.status.running')}</Tag>
       : waiting
-        ? <Tag color="orange">等待确认</Tag>
+        ? <Tag color="orange">{t('agent.panel.process.status.waiting')}</Tag>
         : failed
-          ? <Tag color="error">部分失败</Tag>
+          ? <Tag color="error">{t('agent.panel.process.status.partialFailed')}</Tag>
           : cancelled
-            ? <Tag>已停止</Tag>
-          : <Tag color="success">已完成</Tag>;
+            ? <Tag>{t('agent.panel.process.status.stopped')}</Tag>
+          : <Tag color="success">{t('agent.panel.process.status.completed')}</Tag>;
 
     return (
       <div style={{ width: '100%', marginBottom: 10 }}>
@@ -600,8 +617,8 @@ export default function ProjectAgentPanel({
             label: (
               <Space size={6} wrap>
                 <BulbOutlined />
-                <Text style={{ fontSize: 12 }}>思考与调用过程</Text>
-                <Text type="secondary" style={{ fontSize: 11 }}>{ordered.length} 步</Text>
+                <Text style={{ fontSize: 12 }}>{t('agent.panel.process.title')}</Text>
+                <Text type="secondary" style={{ fontSize: 11 }}>{t('agent.panel.process.steps', { count: ordered.length })}</Text>
                 <Text type="secondary" style={{ fontSize: 11 }}>{processElapsed}S</Text>
                 {statusTag}
               </Space>
@@ -617,7 +634,7 @@ export default function ProjectAgentPanel({
                     disabled={Boolean(decidingId || approvingAllMessageId)}
                     onClick={() => void approveAllTools(waitingToolCalls, messageId)}
                   >
-                    一键批准全部修改（{waitingToolCalls.length} 项）
+                    {t('agent.panel.approveAllButton', { count: waitingToolCalls.length })}
                   </Button>
                 )}
                 {ordered.map(step => {
@@ -645,14 +662,14 @@ export default function ProjectAgentPanel({
                       )}
                       {hasDetail && (
                         <details style={{ marginTop: 7, fontSize: 12 }}>
-                          <summary style={{ cursor: 'pointer', color: token.colorTextSecondary }}>查看参数与结果</summary>
+                          <summary style={{ cursor: 'pointer', color: token.colorTextSecondary }}>{t('agent.panel.process.viewDetails')}</summary>
                           <pre style={{
                             margin: '6px 0 0', padding: 8, borderRadius: 6,
                             background: token.colorFillQuaternary, whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word', maxHeight: 220, overflow: 'auto',
                           }}>{formatValue(Object.fromEntries(
                             Object.entries(step.detail || {}).filter(([key]) => key !== 'tool_call')
-                          ))}</pre>
+                          ), t('agent.panel.empty'))}</pre>
                         </details>
                       )}
                       {renderChangePreview(toolCall)}
@@ -679,18 +696,18 @@ export default function ProjectAgentPanel({
         </Space>
         <Space size={2}>
           <Dropdown menu={conversationMenu} trigger={['click']}>
-            <Tooltip title="历史对话"><Button type="text" icon={<HistoryOutlined />} /></Tooltip>
+            <Tooltip title={t('agent.panel.history')}><Button type="text" icon={<HistoryOutlined />} /></Tooltip>
           </Dropdown>
-          <Tooltip title="新对话"><Button type="text" icon={<PlusOutlined />} onClick={() => void newConversation()} /></Tooltip>
+          <Tooltip title={t('agent.panel.newConversation')}><Button type="text" icon={<PlusOutlined />} onClick={() => void newConversation()} /></Tooltip>
           {activeConversationId && (
-            <Popconfirm title="删除当前对话？" onConfirm={() => void removeConversation()}>
-              <Tooltip title="删除对话"><Button type="text" danger icon={<DeleteOutlined />} /></Tooltip>
+            <Popconfirm title={t('agent.panel.deleteConversationConfirm')} onConfirm={() => void removeConversation()}>
+              <Tooltip title={t('agent.panel.deleteConversation')}><Button type="text" danger icon={<DeleteOutlined />} /></Tooltip>
             </Popconfirm>
           )}
           {mobile ? (
             <Button type="text" icon={<CloseOutlined />} onClick={onMobileClose} />
           ) : (
-            <Tooltip title="收起"><Button type="text" icon={<MenuFoldOutlined />} onClick={() => changeExpanded(false)} /></Tooltip>
+            <Tooltip title={t('agent.panel.collapse')}><Button type="text" icon={<MenuFoldOutlined />} onClick={() => changeExpanded(false)} /></Tooltip>
           )}
         </Space>
       </div>
@@ -705,8 +722,8 @@ export default function ProjectAgentPanel({
           }}>
             <AssistantLogo size={72} />
             <div style={{ marginTop: 14 }}>
-              <Text strong>可以查询和修改当前项目</Text><br />
-              <Text type="secondary" style={{ fontSize: 12 }}>例如：“把第三条大纲标题改得更有悬念”</Text>
+              <Text strong>{t('agent.panel.emptyTitle')}</Text><br />
+              <Text type="secondary" style={{ fontSize: 12 }}>{t('agent.panel.emptyExample')}</Text>
             </div>
           </div>
         ) : messages.filter(item => item.role === 'user' || item.role === 'assistant').map((item, index, visibleMessages) => {
@@ -766,7 +783,7 @@ export default function ProjectAgentPanel({
               void send();
             }
           }}
-          placeholder="询问或修改当前项目……"
+          placeholder={t('agent.panel.inputPlaceholder')}
           autoSize={{ minRows: 2, maxRows: 5 }}
           disabled={sending}
         />
@@ -774,14 +791,14 @@ export default function ProjectAgentPanel({
         <Space size={6}>
           <SafetyCertificateOutlined style={{ color: autoApprove ? token.colorSuccess : token.colorTextSecondary }} />
           <Text type="secondary" style={{ fontSize: 11 }}>
-            {autoApprove ? '自动批准修改' : '手动批准修改'}
+            {autoApprove ? t('agent.panel.autoApproveLabel') : t('agent.panel.manualApproveLabel')}
           </Text>
           <Switch size="small" checked={autoApprove} onChange={toggleAutoApprove} />
         </Space>
           {sending ? (
-            <Button size="small" icon={<StopOutlined />} onClick={() => abortRef.current?.abort()}>停止</Button>
+            <Button size="small" icon={<StopOutlined />} onClick={() => abortRef.current?.abort()}>{t('agent.panel.stop')}</Button>
           ) : (
-            <Button type="primary" size="small" icon={<SendOutlined />} disabled={!input.trim()} onClick={() => void send()}>发送</Button>
+            <Button type="primary" size="small" icon={<SendOutlined />} disabled={!input.trim()} onClick={() => void send()}>{t('agent.panel.send')}</Button>
           )}
         </div>
       </div>
@@ -809,7 +826,7 @@ export default function ProjectAgentPanel({
         width: 48, flex: '0 0 48px', borderLeft: `1px solid ${token.colorBorderSecondary}`,
         display: 'flex', justifyContent: 'center', paddingTop: 10, background: token.colorBgContainer,
       }}>
-        <Tooltip title="展开木木创作助手" placement="left">
+        <Tooltip title={t('agent.panel.expand')} placement="left">
           <Button type="text" icon={<AssistantLogo size={20} />} onClick={() => changeExpanded(true)} />
         </Tooltip>
       </div>

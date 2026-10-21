@@ -33,6 +33,14 @@ const zh = {
         selectProjectFirst: '请先选择项目',
         setDefaultSuccess: '设置默认风格成功',
         setFailed: '设置失败',
+        presetNames: {
+            natural: '自然流畅',
+            classical: '古典优雅',
+            modern: '现代简约',
+            literary: '文艺细腻',
+            suspense: '紧张悬疑',
+            humorous: '幽默诙谐',
+        },
     },
 };
 
@@ -71,6 +79,14 @@ const en = {
         selectProjectFirst: 'Please select a project first',
         setDefaultSuccess: 'Default style set successfully',
         setFailed: 'Setting failed',
+        presetNames: {
+            natural: 'Natural and Fluent',
+            classical: 'Classical and Elegant',
+            modern: 'Modern Minimalist',
+            literary: 'Literary and Delicate',
+            suspense: 'Tense and Suspenseful',
+            humorous: 'Humorous and Witty',
+        },
     },
 };
 
@@ -109,6 +125,14 @@ const vi = {
         selectProjectFirst: 'Vui lòng chọn dự án trước',
         setDefaultSuccess: 'Đặt phong cách mặc định thành công',
         setFailed: 'Đặt thất bại',
+        presetNames: {
+            natural: 'Tự nhiên trôi chảy',
+            classical: 'Cổ điển thanh nhã',
+            modern: 'Hiện đại tối giản',
+            literary: 'Văn nghệ tinh tế',
+            suspense: 'Căng thẳng ly kỳ',
+            humorous: 'Hài hước dí dỏm',
+        },
     },
 };
 

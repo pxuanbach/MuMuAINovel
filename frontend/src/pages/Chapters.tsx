@@ -7,6 +7,7 @@ import { eventBus, EventNames } from '../store/eventBus';
 import { useChapterSync } from '../store/hooks';
 import { generateChapterBackground } from '../services/backgroundTaskService';
 import { projectApi, writingStyleApi, chapterApi } from '../services/api';
+import { getStyleDisplayName, getSkillDisplayName, getSkillCategoryName } from '../utils/localizedNames';
 import type { Chapter, ChapterUpdate, ApiError, WritingStyle, AnalysisTask, ExpansionPlanData } from '../types';
 import type { TextAreaRef } from 'antd/es/input/TextArea';
 import ChapterAnalysis from '../components/ChapterAnalysis';
@@ -2658,7 +2659,7 @@ export default function Chapters() {
               >
                 {writingStyles.map(style => (
                   <Select.Option key={style.id} value={style.id}>
-                    {style.name}{style.is_default && t('chapters.editor.defaultSuffix')}
+                    {getStyleDisplayName(style, t)}{style.is_default && t('chapters.editor.defaultSuffix')}
                   </Select.Option>
                 ))}
               </Select>
@@ -2712,10 +2713,10 @@ export default function Chapters() {
                 optionFilterProp="label"
               >
                 {availableSkills.map(skill => (
-                  <Select.Option key={skill.template_key} value={skill.template_key} label={skill.template_name}>
+                  <Select.Option key={skill.template_key} value={skill.template_key} label={getSkillDisplayName(skill, t)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{skill.template_name}</span>
-                      <Tag style={{ fontSize: 11, lineHeight: '18px', padding: '0 4px' }}>{skill.category}</Tag>
+                      <span>{getSkillDisplayName(skill, t)}</span>
+                      <Tag style={{ fontSize: 11, lineHeight: '18px', padding: '0 4px' }}>{getSkillCategoryName(skill.category, t)}</Tag>
                     </div>
                   </Select.Option>
                 ))}
@@ -2976,7 +2977,7 @@ export default function Chapters() {
                 <Select placeholder={t('chapters.batch.stylePlaceholder')} showSearch optionFilterProp="children">
                   {writingStyles.map(style => (
                     <Select.Option key={style.id} value={style.id}>
-                      {style.name}{style.is_default && t('chapters.batch.defaultSuffix')}
+                      {getStyleDisplayName(style, t)}{style.is_default && t('chapters.batch.defaultSuffix')}
                     </Select.Option>
                   ))}
                 </Select>
@@ -3042,10 +3043,10 @@ export default function Chapters() {
                   optionFilterProp="label"
                 >
                   {availableSkills.map(skill => (
-                    <Select.Option key={skill.template_key} value={skill.template_key} label={skill.template_name}>
+                    <Select.Option key={skill.template_key} value={skill.template_key} label={getSkillDisplayName(skill, t)}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span>{skill.template_name}</span>
-                        <Tag style={{ fontSize: 11, lineHeight: '18px', padding: '0 4px' }}>{skill.category}</Tag>
+                        <span>{getSkillDisplayName(skill, t)}</span>
+                        <Tag style={{ fontSize: 11, lineHeight: '18px', padding: '0 4px' }}>{getSkillCategoryName(skill.category, t)}</Tag>
                       </div>
                     </Select.Option>
                   ))}

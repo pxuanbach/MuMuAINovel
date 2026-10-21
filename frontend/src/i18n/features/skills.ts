@@ -88,6 +88,22 @@ const zh = {
       deleteSuccess: '删除成功',
       deleteFailed: '删除失败',
     },
+    names: {
+      storyLongWrite: '长篇网文写作',
+      storyShortWrite: '短篇网文写作',
+      storyLongAnalyze: '长篇网文拆文',
+      storyShortAnalyze: '短篇网文拆文',
+      storyLongScan: '长篇网文扫榜',
+      storyShortScan: '短篇网文扫榜',
+      storyDeslop: '网文去AI味',
+    },
+    categories: {
+      long: 'Skill·长篇',
+      short: 'Skill·短篇',
+      polish: 'Skill·润色',
+      tools: 'Skill·工具',
+      default: 'Skill',
+    },
   },
 };
 
@@ -181,6 +197,22 @@ const en = {
       deleteSuccess: 'Deleted successfully',
       deleteFailed: 'Delete failed',
     },
+    names: {
+      storyLongWrite: 'Long-form Web Novel Writing',
+      storyShortWrite: 'Short-form Web Novel Writing',
+      storyLongAnalyze: 'Long-form Web Novel Deconstruction',
+      storyShortAnalyze: 'Short-form Web Novel Deconstruction',
+      storyLongScan: 'Long-form Web Novel Market Scan',
+      storyShortScan: 'Short-form Web Novel Market Scan',
+      storyDeslop: 'Web Novel De-AI Polish',
+    },
+    categories: {
+      long: 'Skill·Long',
+      short: 'Skill·Short',
+      polish: 'Skill·Polish',
+      tools: 'Skill·Tools',
+      default: 'Skill',
+    },
   },
 };
 
@@ -273,6 +305,22 @@ const vi = {
       createFailed: 'Tạo thất bại',
       deleteSuccess: 'Xóa thành công',
       deleteFailed: 'Xóa thất bại',
+    },
+    names: {
+      storyLongWrite: 'Viết truyện dài',
+      storyShortWrite: 'Viết truyện ngắn',
+      storyLongAnalyze: 'Mổ xẻ truyện dài',
+      storyShortAnalyze: 'Mổ xẻ truyện ngắn',
+      storyLongScan: 'Quét bảng xếp hạng truyện dài',
+      storyShortScan: 'Quét bảng xếp hạng truyện ngắn',
+      storyDeslop: 'Loại bỏ dấu vết AI',
+    },
+    categories: {
+      long: 'Skill·Truyện dài',
+      short: 'Skill·Truyện ngắn',
+      polish: 'Skill·Trau chuốt',
+      tools: 'Skill·Công cụ',
+      default: 'Skill',
     },
   },
 };

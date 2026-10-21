@@ -2,6 +2,7 @@
 from typing import Dict, Any, AsyncGenerator, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.ai_service import AIService
+from app.services.content_language import apply_language_directive
 from app.services.prompt_service import prompt_service, PromptService
 from app.models.chapter import Chapter
 from app.models.memory import PlotAnalysis
@@ -81,6 +82,12 @@ class ChapterRegenerator:
 ⚠️ 请严格遵循上述写作风格要求进行重写，这是最重要的指令！
 确保在整个章节重写过程中始终保持风格的一致性。"""
                 logger.info(f"✅ 已将写作风格注入系统提示词（{len(style_content)}字符）")
+
+            # 按项目内容语言追加生成指令（zh 时不追加）
+            system_prompt_with_style = apply_language_directive(
+                system_prompt_with_style or self.ai_service.default_system_prompt,
+                project_context.get('language')
+            )
             
             # 4. 流式生成新内容，同时跟踪进度
             target_word_count = regenerate_request.target_word_count

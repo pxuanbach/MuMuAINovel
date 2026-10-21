@@ -29,6 +29,7 @@ from app.services.json_helper import loads_json, stringify_field
 from app.logger import get_logger, safe_preview
 from app.api.settings import get_user_ai_service
 from app.api.common import verify_project_access
+from app.services.content_language import apply_language_directive, get_project_language
 
 router = APIRouter(prefix="/careers", tags=["职业管理"])
 logger = get_logger(__name__)
@@ -178,6 +179,10 @@ async def generate_career_system(
             sub_career_count = request_data.sub_career_count
             user_requirements = request_data.user_requirements
             project = await verify_project_access(project_id, user_id, db)
+            # 按项目内容语言追加生成指令
+            user_ai_service.default_system_prompt = apply_language_directive(
+                user_ai_service.default_system_prompt, get_project_language(project)
+            )
             
             yield await tracker.start()
             

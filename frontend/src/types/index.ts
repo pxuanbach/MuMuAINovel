@@ -167,6 +167,7 @@ export interface Project {
   wizard_status?: 'incomplete' | 'completed';
   wizard_step?: number;
   outline_mode: 'one-to-one' | 'one-to-many';  // 大纲章节模式
+  language?: 'zh' | 'en' | 'vi';  // 小说内容语言（创建后不可更改）
   world_time_period?: string;
   world_location?: string;
   world_atmosphere?: string;
@@ -190,6 +191,7 @@ export interface ProjectCreate {
   genre?: string;
   target_words?: number;
   outline_mode?: 'one-to-one' | 'one-to-many';  // 大纲章节模式,默认one-to-many
+  language?: 'zh' | 'en' | 'vi';  // 小说内容语言,默认zh
   wizard_status?: 'incomplete' | 'completed';
   wizard_step?: number;
   world_time_period?: string;
@@ -705,6 +707,7 @@ export interface WizardBasicInfo {
   character_count?: number;
   target_words?: number;
   outline_mode?: 'one-to-one' | 'one-to-many';  // 大纲章节模式
+  language?: 'zh' | 'en' | 'vi';  // 小说内容语言（创建后不可更改）
 }
 
 // API 错误响应类型

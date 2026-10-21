@@ -18,6 +18,7 @@ export interface GenerationConfig {
   chapter_count: number;
   character_count: number;
   outline_mode?: 'one-to-one' | 'one-to-many';  // 大纲章节模式
+  language?: 'zh' | 'en' | 'vi';  // 小说内容语言（创建后不可更改）
 }
 
 interface AIProjectGeneratorProps {
@@ -137,6 +138,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
     config.chapter_count,
     config.character_count,
     config.outline_mode,
+    config.language,
   ]);
 
   // 开始自动化生成流程
@@ -261,6 +263,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         chapter_count: data.chapter_count,
         character_count: data.character_count,
         outline_mode: data.outline_mode || 'one-to-many',  // 传递大纲模式
+        language: data.language,  // 传递内容语言
       },
       {
         signal,
@@ -462,6 +465,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
           chapter_count: data.chapter_count,
           character_count: data.character_count,
           outline_mode: data.outline_mode || 'one-to-many',  // 传递大纲模式
+          language: data.language,  // 传递内容语言
         },
         {
           signal,
@@ -682,6 +686,7 @@ export const AIProjectGenerator: React.FC<AIProjectGeneratorProps> = ({
         chapter_count: generationData.chapter_count,
         character_count: generationData.character_count,
         outline_mode: generationData.outline_mode || 'one-to-many',  // 传递大纲模式
+        language: generationData.language,  // 传递内容语言
       },
       {
         onProgress: (msg, prog) => {

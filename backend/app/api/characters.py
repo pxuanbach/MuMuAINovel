@@ -28,6 +28,7 @@ from app.schemas.import_export import CharactersExportRequest, CharactersImportR
 from app.logger import get_logger, safe_preview
 from app.api.settings import get_user_ai_service
 from app.api.common import verify_project_access
+from app.services.content_language import apply_language_directive, get_project_language
 
 router = APIRouter(prefix="/characters", tags=["角色管理"])
 logger = get_logger(__name__)
@@ -829,6 +830,10 @@ async def generate_character_stream(
             # 验证用户权限和项目是否存在
             user_id = getattr(http_request.state, 'user_id', None)
             project = await verify_project_access(request.project_id, user_id, db)
+            # 按项目内容语言追加生成指令
+            user_ai_service.default_system_prompt = apply_language_directive(
+                user_ai_service.default_system_prompt, get_project_language(project)
+            )
             
             yield await tracker.start()
             

@@ -51,6 +51,7 @@ from app.schemas.regeneration import (
     RegenerationTaskStatus
 )
 from app.services.ai_service import AIService
+from app.services.content_language import apply_language_directive, get_project_language
 from app.services.prompt_service import prompt_service, PromptService, WritingStyleManager
 from app.services.plot_analyzer import PlotAnalyzer
 from app.services.memory_service import memory_service
@@ -1104,6 +1105,8 @@ async def _analyze_chapter_background_impl(
                 logger.warning(f"⚠️ 更新重试状态失败: {callback_error}")
         
         # 3. 使用PlotAnalyzer分析章节（传入已有伏笔列表、角色信息和重试回调）
+        project_result = await db_session.execute(select(Project).where(Project.id == project_id))
+        analysis_project = project_result.scalar_one_or_none()
         analyzer = PlotAnalyzer(ai_service)
         analysis_result = await analyzer.analyze_chapter(
             chapter_number=chapter.chapter_number,
@@ -1112,7 +1115,8 @@ async def _analyze_chapter_background_impl(
             word_count=chapter.word_count or len(chapter.content),
             existing_foreshadows=existing_foreshadows,
             on_retry=on_retry_callback,
-            characters_info=characters_info
+            characters_info=characters_info,
+            language=get_project_language(analysis_project)
         )
         
         if not analysis_result:
@@ -1793,7 +1797,7 @@ async def generate_chapter_content_stream(
                 # 准备生成参数
                 generate_kwargs = {
                     "prompt": prompt,
-                    "system_prompt": system_prompt_with_style,
+                    "system_prompt": apply_language_directive(system_prompt_with_style or user_ai_service.default_system_prompt, get_project_language(project)),
                     "tool_choice": "required",
                     "max_tokens": calculated_max_tokens,
                     "auto_mcp": bool(generate_request.enable_mcp)
@@ -2281,7 +2285,7 @@ async def _run_chapter_generation_bg(
 
     generate_kwargs = {
         "prompt": prompt,
-        "system_prompt": system_prompt_with_style,
+        "system_prompt": apply_language_directive(system_prompt_with_style or ai_service.default_system_prompt, get_project_language(project)),
         "tool_choice": "required",
         "max_tokens": calculated_max_tokens,
         "auto_mcp": bool(enable_mcp)
@@ -2819,7 +2823,7 @@ async def _run_chapter_generation_bg(
 
     generate_kwargs = {
         "prompt": prompt,
-        "system_prompt": system_prompt_with_style,
+        "system_prompt": apply_language_directive(system_prompt_with_style or ai_service.default_system_prompt, get_project_language(project)),
         "tool_choice": "required",
         "max_tokens": calculated_max_tokens,
         "auto_mcp": bool(enable_mcp)
@@ -4363,7 +4367,7 @@ async def generate_single_chapter_for_batch(
     # 准备生成参数
     generate_kwargs = {
         "prompt": prompt,
-        "system_prompt": system_prompt_with_style,
+        "system_prompt": apply_language_directive(system_prompt_with_style or ai_service.default_system_prompt, get_project_language(project)),
         "tool_choice": "required",
         "max_tokens": calculated_max_tokens,
         "auto_mcp": bool(enable_mcp)
@@ -4615,6 +4619,7 @@ async def regenerate_chapter_stream(
                 'project_title': project.title if project else '未知',
                 'genre': project.genre if project else '未设定',
                 'theme': project.theme if project else '未设定',
+                'language': get_project_language(project),
                 'narrative_perspective': project.narrative_perspective if project else '第三人称',
                 'time_period': project.world_time_period if project else '未设定',
                 'location': project.world_location if project else '未设定',
@@ -4990,6 +4995,11 @@ async def partial_regenerate_stream(
         select(Project).where(Project.id == chapter.project_id)
     )
     project = project_result.scalar_one_or_none()
+    
+    # 按项目内容语言追加生成指令
+    user_ai_service.default_system_prompt = apply_language_directive(
+        user_ai_service.default_system_prompt, get_project_language(project)
+    )
     
     # 获取写作风格
     style_content = ""

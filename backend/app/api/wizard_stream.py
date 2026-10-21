@@ -16,6 +16,7 @@ from app.models.relationship import CharacterRelationship, Organization, Organiz
 from app.models.writing_style import WritingStyle
 from app.models.project_default_style import ProjectDefaultStyle
 from app.services.ai_service import AIService
+from app.services.content_language import apply_language_directive, get_project_language
 from app.services.json_helper import loads_json, stringify_field
 from app.services.prompt_service import prompt_service, PromptService
 from app.services.plot_expansion_service import PlotExpansionService
@@ -65,6 +66,13 @@ async def world_building_generator(
         chapter_count = data.get("chapter_count")
         character_count = data.get("character_count")
         outline_mode = data.get("outline_mode", "one-to-many")  # 大纲模式，默认一对多
+        language = data.get("language", "zh")  # 小说内容语言，默认中文
+        if language not in ("zh", "en", "vi"):
+            language = "zh"
+        # 按内容语言追加生成指令（zh 时不追加，保持原行为）
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, language
+        )
         provider = data.get("provider")
         model = data.get("model")
         enable_mcp = data.get("enable_mcp", True)  # 默认启用MCP
@@ -237,6 +245,7 @@ async def world_building_generator(
             chapter_count=chapter_count,
             character_count=character_count,
             outline_mode=outline_mode,  # 设置大纲模式
+            language=language,  # 设置小说内容语言（创建后不可更改）
             wizard_status="incomplete",
             wizard_step=1,
             status="planning"
@@ -354,6 +363,11 @@ async def career_system_generator(
         if not project:
             yield await tracker.error("项目不存在或无权访问", 404)
             return
+        
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         # 设置用户信息以启用MCP
         if user_id:
@@ -626,6 +640,11 @@ async def characters_generator(
             return
         
         project.wizard_step = 2
+        
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         world_context = world_context or {
             "time_period": project.world_time_period or "未设定",
@@ -1308,6 +1327,11 @@ async def outline_generator(
             user_ai_service.user_id = user_id
             user_ai_service.db_session = db
         
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
+        
         # 获取角色信息
         yield await tracker.loading("加载角色信息...", 0.8)
         result = await db.execute(
@@ -1606,6 +1630,11 @@ async def world_building_regenerate_generator(
         if not project:
             yield await tracker.error("项目不存在或无权访问", 404)
             return
+        
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         # 获取基础提示词（支持自定义）
         yield await tracker.preparing("准备AI提示词...")

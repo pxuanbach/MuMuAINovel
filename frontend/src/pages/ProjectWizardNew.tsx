@@ -78,6 +78,7 @@ export default function ProjectWizardNew() {
         target_words: project.target_words || 100000,
         chapter_count: 3,
         character_count: project.character_count || 5,
+        language: project.language || 'zh',
       };
 
       setGenerationConfig(config);
@@ -110,6 +111,7 @@ export default function ProjectWizardNew() {
       chapter_count: 3, // 默认生成3章大纲
       character_count: values.character_count || 5,
       outline_mode: values.outline_mode || 'one-to-many', // 添加大纲模式
+      language: values.language || 'zh', // 内容语言
     };
 
     setGenerationConfig(config);
@@ -148,6 +150,7 @@ export default function ProjectWizardNew() {
           character_count: 5,
           target_words: 100000,
           outline_mode: 'one-to-one', // 默认为传统模式（1-1）
+          language: 'zh', // 默认内容语言为中文
         }}
       >
         <Form.Item
@@ -270,6 +273,19 @@ export default function ProjectWizardNew() {
               </Col>
             </Row>
           </Radio.Group>
+        </Form.Item>
+
+        <Form.Item
+          label={t('wizard.labelLanguage')}
+          name="language"
+          rules={[{ required: true, message: t('wizard.languageRequired') }]}
+          tooltip={t('wizard.languageTooltip')}
+        >
+          <Select size="large" placeholder={t('wizard.languagePlaceholder')}>
+            <Select.Option value="zh">{t('wizard.languageZh')}</Select.Option>
+            <Select.Option value="en">{t('wizard.languageEn')}</Select.Option>
+            <Select.Option value="vi">{t('wizard.languageVi')}</Select.Option>
+          </Select>
         </Form.Item>
 
         <Row gutter={16}>

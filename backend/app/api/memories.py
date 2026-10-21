@@ -9,6 +9,7 @@ from app.models.chapter import Chapter
 from app.models.project import Project
 from app.services.memory_service import memory_service
 from app.services.plot_analyzer import get_plot_analyzer
+from app.services.content_language import get_project_language
 from app.services.foreshadow_service import foreshadow_service
 from app.services.ai_service import create_user_ai_service
 from app.models.settings import Settings
@@ -37,7 +38,7 @@ async def analyze_chapter(
         user_id = getattr(request.state, 'user_id', None)
         
         # 验证用户权限
-        await verify_project_access(project_id, user_id, db)
+        project = await verify_project_access(project_id, user_id, db)
         
         # 获取章节内容
         result = await db.execute(
@@ -91,7 +92,8 @@ async def analyze_chapter(
             word_count=chapter.word_count or len(chapter.content),
             user_id=user_id,
             db=db,
-            existing_foreshadows=existing_foreshadows
+            existing_foreshadows=existing_foreshadows,
+            language=get_project_language(project)
         )
         
         if not analysis_result:

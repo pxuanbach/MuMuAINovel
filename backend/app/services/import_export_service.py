@@ -94,6 +94,7 @@ class ImportExportService:
             "narrative_perspective": project.narrative_perspective,
             "character_count": project.character_count,
             "outline_mode": project.outline_mode,
+            "language": project.language,
             "user_id": project.user_id,
             "created_at": project.created_at.isoformat() if project.created_at else None,
         }
@@ -738,6 +739,7 @@ class ImportExportService:
                 narrative_perspective=project_data.get("narrative_perspective"),
                 character_count=project_data.get("character_count"),
                 outline_mode=project_data.get("outline_mode", "one-to-many"),  # ✅ 导入大纲模式，默认为一对多
+                language=project_data.get("language", "zh"),  # ✅ 导入内容语言，默认中文
                 current_words=project_data.get("current_words", 0),  # 保留原项目的字数
                 wizard_step=4,  # 导入的项目设置为向导完成状态
                 wizard_status="completed"  # 标记向导已完成

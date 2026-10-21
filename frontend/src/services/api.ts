@@ -1085,6 +1085,7 @@ export const wizardStreamApi = {
       chapter_count?: number;
       character_count?: number;
       outline_mode?: 'one-to-one' | 'one-to-many';  // 添加大纲模式参数
+      language?: 'zh' | 'en' | 'vi';  // 小说内容语言
       provider?: string;
       model?: string;
     },

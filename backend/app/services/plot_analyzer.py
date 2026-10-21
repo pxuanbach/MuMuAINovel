@@ -2,6 +2,7 @@
 from typing import Dict, Any, List, Optional, Callable, Awaitable
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.ai_service import AIService
+from app.services.content_language import apply_language_directive
 from app.services.json_helper import loads_json
 from app.services.prompt_service import prompt_service, PromptService
 from app.logger import get_logger, safe_preview
@@ -40,7 +41,8 @@ class PlotAnalyzer:
         max_retries: int = 3,
         existing_foreshadows: Optional[List[Dict[str, Any]]] = None,
         on_retry: Optional[OnRetryCallback] = None,
-        characters_info: str = ""
+        characters_info: str = "",
+        language: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         分析单章内容（带重试机制）
@@ -101,6 +103,7 @@ class PlotAnalyzer:
                 try:
                     async for chunk in self.ai_service.generate_text_stream(
                         prompt=prompt,
+                        system_prompt=apply_language_directive(self.ai_service.default_system_prompt, language),
                         temperature=0.3  # 降低温度以获得更稳定的JSON输出
                     ):
                         accumulated_text += chunk

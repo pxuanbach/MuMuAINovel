@@ -7,6 +7,7 @@ import json
 
 from app.database import get_db
 from app.api.common import verify_project_access
+from app.services.content_language import apply_language_directive, get_project_language
 from app.models.outline import Outline
 from app.models.project import Project
 from app.models.chapter import Chapter
@@ -1064,6 +1065,10 @@ async def new_outline_generator(
         if not project:
             yield await tracker.error("项目不存在", 404)
             return
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         yield await tracker.loading(f"准备生成{chapter_count}章大纲...", 0.6)
         
@@ -1416,6 +1421,10 @@ async def continue_outline_generator(
         if not project:
             yield await tracker.error("项目不存在", 404)
             return
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         # 获取现有大纲
         yield await tracker.loading("分析已有大纲...", 0.5)
@@ -1903,6 +1912,10 @@ async def _run_new_outline_bg(
     if not project:
         await tracker.error("项目不存在")
         return
+    # 按项目内容语言追加生成指令
+    user_ai_service.default_system_prompt = apply_language_directive(
+        user_ai_service.default_system_prompt, get_project_language(project)
+    )
 
     await tracker.loading(f"准备生成{chapter_count}章大纲...", 0.6)
     characters_result = await db.execute(select(Character).where(Character.project_id == project_id))
@@ -2085,6 +2098,10 @@ async def _run_continue_outline_bg(
     if not project:
         await tracker.error("项目不存在")
         return
+    # 按项目内容语言追加生成指令
+    user_ai_service.default_system_prompt = apply_language_directive(
+        user_ai_service.default_system_prompt, get_project_language(project)
+    )
 
     existing_result = await db.execute(
         select(Outline).where(Outline.project_id == project_id).order_by(Outline.order_index)
@@ -2387,6 +2404,10 @@ async def expand_outline_generator(
         if not project:
             yield await tracker.error("项目不存在", 404)
             return
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         yield await tracker.preparing(
             f"准备展开《{outline.title}》为 {target_chapter_count} 章..."
@@ -3068,6 +3089,10 @@ async def batch_expand_outlines_generator(
         if not project:
             yield await tracker.error("项目不存在", 404)
             return
+        # 按项目内容语言追加生成指令
+        user_ai_service.default_system_prompt = apply_language_directive(
+            user_ai_service.default_system_prompt, get_project_language(project)
+        )
         
         # 获取要展开的大纲列表
         yield await tracker.loading("获取大纲列表...", 0.8)

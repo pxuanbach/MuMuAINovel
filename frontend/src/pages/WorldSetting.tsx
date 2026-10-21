@@ -268,6 +268,7 @@ export default function WorldSetting() {
             )}
             <Descriptions.Item label={t('worldSetting.novelTheme')}>{currentProject.theme || t('worldSetting.notSet')}</Descriptions.Item>
             <Descriptions.Item label={t('worldSetting.novelGenre')}>{currentProject.genre || t('worldSetting.notSet')}</Descriptions.Item>
+            <Descriptions.Item label={t('worldSetting.contentLanguage')}>{t(`language.${currentProject.language || 'zh'}`)}</Descriptions.Item>
             <Descriptions.Item label={t('worldSetting.narrativePerspective')}>{currentProject.narrative_perspective || t('worldSetting.notSet')}</Descriptions.Item>
             <Descriptions.Item label={t('worldSetting.targetWords')}>
               {currentProject.target_words ? t('worldSetting.targetWordsValue', { value: currentProject.target_words.toLocaleString() }) : t('worldSetting.notSet')}

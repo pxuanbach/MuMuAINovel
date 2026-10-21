@@ -15,6 +15,10 @@ class ProjectBase(BaseModel):
         default="one-to-many",
         description="大纲章节模式: one-to-one(传统模式,1大纲→1章节) 或 one-to-many(细化模式,1大纲→N章节)"
     )
+    language: Literal["zh", "en", "vi"] = Field(
+        default="zh",
+        description="小说内容语言: zh(中文)/en(英文)/vi(越南语)，创建后不可更改"
+    )
 
 
 class ProjectCreate(ProjectBase):
@@ -85,6 +89,10 @@ class ProjectWizardRequest(BaseModel):
     outline_mode: Literal["one-to-one", "one-to-many"] = Field(
         default="one-to-many",
         description="大纲章节模式"
+    )
+    language: Literal["zh", "en", "vi"] = Field(
+        default="zh",
+        description="小说内容语言: zh/en/vi，创建后不可更改"
     )
 
 
